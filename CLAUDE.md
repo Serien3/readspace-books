@@ -17,7 +17,9 @@ Your role extends beyond basic maintenance to facilitate "vibeReading" - deep, d
 
 ## Book Directory Maintenance
 
-Each book directory must contain an up-to-date `CLAUDE.md` limited to its organization, available reading materials, and which materials agents should read for the most direct access to the book. Agents should consult it before reading; describe the materials actually maintained without prescribing a format.
+Each book directory must contain a concise, up-to-date `CLAUDE.md` identifying the most agent-readable version of the book and only the paths or navigation needed to read it. Agents should consult it before reading.
+
+Treat alternative formats of the same content as equivalent. Each book's `CLAUDE.md` should explicitly state that agents need not read other formats beyond the recommended version unless they encounter a substantive ambiguity or suspect a formatting or content conversion error. Prioritize formats by ease of reading for AI agents, generally in this order: chapter/section Markdown → full-book Markdown or plain text → HTML → Word → text-based PDF → scanned PDF.
 
 Also create an `AGENTS.md` relative symlink pointing to that directory's `CLAUDE.md`.
 
