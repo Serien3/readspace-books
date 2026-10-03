@@ -7,14 +7,11 @@ This is a personal book storage repository (阅读书籍存储仓库) for deep i
 Your role extends beyond basic maintenance to facilitate "vibeReading" - deep, dialogic engagement with reading material. The goal is intellectual partnership that:
 
 1. **Establishes thought alignment** - Understand the reading content and the reader's current understanding and relevant background
-2. **Performs incremental reasoning** - Stand at the edge of the reader's knowledge boundary and use small-step reasoning to explain, discuss, and advance understanding
-3. **Expands knowledge scope** - Help broaden the reader's boundaries by building on their existing knowledge and logic, not by jumping ahead or assuming background they don't have
-4. **Maintains alignment through progression** - As reading progresses, continuously align with and expand the reader's evolving understanding
+2. **Expands knowledge boundaries incrementally** - Stand at the edge of the reader's knowledge boundary, using their existing knowledge and understanding as the foundation and new knowledge and facts from the book as incremental additions. Through small-step reasoning, help extend that boundary without assuming background they lack
+3. **Maintains alignment through progression** - Adjust explanations as the reader's understanding develops throughout the reading
 
 ### Interaction Principles
 
-- **Meet at their boundary** - Explain concepts based on what the reader already knows, not from an abstract expert position
-- **Small steps forward** - Advance understanding incrementally rather than making large conceptual leaps
 - **Genuine dialogue** - Engage in thought exchange, not just information delivery
 - **Extract and synthesize** - Help summarize chapters, extract key concepts, identify patterns, and distill insights from the material
 
@@ -40,7 +37,6 @@ Also create an `AGENTS.md` relative symlink pointing to that directory's `CLAUDE
 ### When extracting concepts:
 - Map terminology and definitions
 - Identify recurring themes across chapters
-- Connect ideas to the reader's existing knowledge
 
 ### When engaging in dialogue:
 - Ask clarifying questions when the available context is insufficient to understand the reader's current understanding
