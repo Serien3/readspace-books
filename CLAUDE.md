@@ -19,7 +19,7 @@ Your role extends beyond basic maintenance to facilitate "vibeReading" - deep, d
 
 Each book directory must contain a concise, up-to-date `CLAUDE.md` identifying the most agent-readable version of the book and only the paths or navigation needed to read it. Agents should consult it before reading.
 
-Treat alternative formats of the same content as equivalent. Each book's `CLAUDE.md` should explicitly state that agents need not read other formats beyond the recommended version unless they encounter a substantive ambiguity or suspect a formatting or content conversion error. Prioritize formats by ease of reading for AI agents, generally in this order: chapter/section Markdown → full-book Markdown or plain text → HTML → Word → text-based PDF → scanned PDF.
+Treat alternative formats of the same content as equivalent. Each book's `CLAUDE.md` should explicitly state that agents need not read other formats beyond the recommended version. Prioritize formats by ease of reading for AI agents, generally in this order: chapter/section plain text(Markdown, Latex, etc) → full-book plain text(Markdown, Latex, etc)  → HTML → Word → text-based PDF → scanned PDF.
 
 Also create an `AGENTS.md` relative symlink pointing to that directory's `CLAUDE.md`.
 

@@ -1,0 +1,1751 @@
+\chapter{层次化程序结构}
+
+{
+	\noindent
+	\scshape\hfill\scriptsize Ole-Johan Dahl and C. A. R. Hoare\hfill
+}
+\renewcommand{\leftmark}{\normalfont\scriptsize\hfill OLE-JOHAN DAHL AND C. A. R. HOARE\hfill}
+\medskip
+
+\section{引言}
+
+本篇将探讨若干组织程序结构的方法，并指出它们与概念建模之间的关系。
+
+我们将使用 SIMULA 67 程序设计语言，着重讨论其中组织程序结构的机制。SIMULA 67 以 ALGOL 60 为基础，并包含 ALGOL 60 的一个略加限制和修改的版本，作为它的子集。对于新增的语言特性，我们会在引入时以非形式化的方式说明其动机并加以解释。读者应当熟悉 ALGOL 60，最好也了解链表处理技术。
+
+关于 SIMULA 语言的完整说明，请参阅 ``Simula 67 Common Base Language'' [\hyperref[ref:2]{2}]。本篇介绍的某些语言机制，目前尚未纳入 ``Common Base''（共同基础）\footnote{Simula 67 语言最初由位于奥斯陆的挪威计算中心设计。Common Base 定义各个实现共同具有的语言特性。``Simula Standards Group''（Simula 标准组）持续维护和修订 Common Base；其每位成员都代表一个负责某种实现的组织。目前共有 8 个组织在该标准组中有代表。（1971 年夏。）}。
+
+本篇是在 Dahl 于 1970 年在 Marktoberdorf 举办的北约程序设计暑期学校所作系列讲座的基础上扩充、改写而成的。新增的部分内容采用了其他地方出现过的程序实例 [\hyperref[ref:3]{3}, \hyperref[ref:4]{4}, \hyperref[ref:5]{5}]。
+
+\section{预备知识}
+
+\subsection{基本概念}
+
+作为程序设计者，我们处理的是一类特殊的动态系统，我们称之为计算过程或数据处理过程。程序设计语言提供基本概念和组合规则，使我们能够构造和分析计算过程。
+
+下面列出 ALGOL 60 提供的几个基本概念。
+
+\begin{enumerate}[wide, nosep, label=(\arabic*)]
+	\item \textit{类型}是一类\textit{值}。每种类型都有若干相关操作，适用于该类型的值；例如，对于 \textbf{integer} 类型的值，就有算术运算和关系运算。
+	\item \textit{变量}是某一给定类型的一类值，按时间顺序排列。相关操作是访问和赋予它的当前值。二者都可以理解为\textit{复制}操作。
+	\item \textit{数组}是按某种空间布局排列的一类变量。它的相关操作是\textit{下标访问}。
+\end{enumerate}
+
+请注意，上述每个概念都包含一种数据结构，以及一个或多个相关操作。
+
+再来看机器级程序设计这个例子。其基本数据结构是位串，它本身并没有很明确的意义。然而，配上适当的读取机制，位串就有了布尔值序列的意义。与二进制加法器配合使用时，位串表示某个取值范围内的一个数，每一位都是二进制数的一位数字。输出通道与行式打印机相连时，位串便成为字符序列，等等。因此，数据结构的意义在很大程度上取决于与它相关的操作种类。
+
+另一方面，我们也无法设想一种完全不涉及数据的数据处理过程。总之，在我们的思维中，数据与对数据的操作似乎联系得如此紧密，以至于任何有助于理解计算过程的概念，都必须同时包含这两类要素。
+
+\subsection{较高层次的概念}
+
+由于计算设备具有很大的处理能力，我们不得不面对十分复杂的计算过程，仅凭通用的基本概念，几乎无法构造和理解这些过程。限制来自我们智力本身的特点：只有在一次考虑\textit{少量}要素时，我们才可能精确地思考。
+
+处理复杂系统，唯一有效的方法是采用层次结构。我们借助高层概念构造和理解动态系统，再借助较低层次的概念构造和理解这些高层概念，如此逐层展开。这一点必须体现在定义该动态系统的程序\textit{结构}中；高层概念总会以某种方式对应于程序组件。
+
+构造适合某一具体情形的概念，是一个创造性的过程，往往需要借助在系统构造的后续阶段才获得的认识。因此，正如程序设计者的切身体会所揭示的那样，任何软件项目往往都是一个复杂的迭代过程，在每个阶段都要进行重构和修订。
+
+每个概念必然只涉及系统的某个有限方面，
+应当对应于通过\textit{分解}整个程序而得到的一段程序。良好的分解意味着每个组件都可以独立编程，并且修改它时，不会影响系统的其余部分，或者影响相当有限。这样便可以加快整个迭代过程。
+
+任何有用的概念都具有一定程度的普遍性，也就是说，它包含一类
+具体实例。换言之，我们尝试把动态系统中出现的现象归入不同的现象\textit{类}，并用一段程序描述每一类。
+
+一个显而易见的例子是矩阵乘法中的算术运算。所有这些运算都可以归为下面这条语句的动态实例（执行）：
+$$
+C[i, j] \coloneq C[i,j] + A[i, k] \times B[k, j];
+$$
+
+\noindent
+其前提是，矩阵元素被归为二维数组 $A$、$B$ 和 $C$ 的元素，并且变量 $i$、$j$ 和 $k$ 按某种规则取值。
+
+上面这条语句的分解程度还不足以让我们把它视为一个“概念”。然而，下面的过程声明就简洁地定义了矩阵乘法的概念。
+
+一个概念应当能够被归入一般语言框架中的某种\textit{语法类别}（例如 $\langle$block$\rangle$、$\langle$procedure$\rangle$），这一点很重要。围绕给定概念进行结构化思考，就意味着构造语句，使概念之间建立语法和语义关系。下面的过程通过调用序列（过程语句）与其他程序组件关联。
+
+\quad \textbf{procedure} matmult$(A,\ B,\ C,\ m,\ n,\ p)$;
+
+\quad \quad \textbf{array} $A$, $B$, $C$; \textbf{integer} $m$, $n$, $p$;
+
+\quad \textbf{begin integer} $i$, $j$, $k$;
+
+\quad \quad \textbf{for} $i\coloneq 1$ \textbf{step} 1 \textbf{until} $m$ \textbf{do}
+
+\quad \quad \textbf{for} $j\coloneq 1$ \textbf{step} 1 \textbf{until} $n$ \textbf{do}
+
+\quad \quad \textbf{begin} $C[i, j]\coloneq 0$;
+
+\quad \quad \quad \textbf{for} $k\coloneq 1$ \textbf{step} 1 \textbf{until} $p$ \textbf{do}
+
+\quad \quad \quad \quad $C[i, j]\coloneq C[i, j] + A[i, k] \times B[k, i]$
+
+\quad \quad \textbf{end}
+
+\quad \textbf{end};
+
+SIMULA 的过程参数机制与 ALGOL 60 有一些差别。对于通常的简单 $\langle$type$\rangle$ 参数，默认采用传值方式；对于其他种类的参数，则采用“引用”方式。这一差别出于多种实际考虑，其中之一是为了与类声明相容（参见 \ref{sec:frequency-histogram}）。因此，在上面的过程中，参数 $i$、$j$ 和 $k$ 按值传递，$A$、$B$ 和 $C$ 按引用传递。
+
+\subsection{程序块与程序块实例}
+
+ALGOL 60 中最有力的程序结构机制之一，是程序块和过程的概念。从概念建模的角度来看，它具有以下有用的性质。
+
+\begin{enumerate}[wide, nosep, label=(\arabic*)]
+	\item \textit{二重性}。程序块的块首与块尾共同定义一个实体，它既\textit{具有属性}，也\textit{执行动作}。此外，这些属性可以同时包含数据结构和相关运算（局部过程）。
+	
+	\item \textit{分解}。只引用局部量的程序块，是一个完全独立自足的程序组件，在任何上下文中都会按规定发挥作用。通过过程首部，程序块（过程）实例可以与调用序列交互。引用或修改非局部变量的过程，只实现了对整个任务的部分分解；当需要与程序环境直接交互时，这种分解很有用。
+
+	\item \textit{实例类}。ALGOL 60 严格区分程序块与动态程序块实例：前者是一段程序文本，后者则是计算过程（的一个组件）。由此立即得到一个有用的结果：可以把程序块等同于它所有可能激活实例组成的\textit{类}。（严格地说，在这里，“程序块”指的是最外层程序块，或直接包含在某个动态程序块实例中的程序块。）借助 ALGOL 60 的递归机制，同一程序块的不同实例可以在一个计算过程中同时存在。
+
+	\item \textit{语言元素}。程序块本身就是一条语句，而语句是该语言的一种语法类别。此外，借助过程机制，对程序块的引用可以与定义它的文本分离。
+\end{enumerate}
+
+回顾前面的讨论，ALGOL 的程序块机制似乎已经具备概念建模机制所需的一切性质。然而，仔细考察就会发现，它提供的组合规则和交互机制，仍然限制了所能表达的概念范围。
+
+ALGOL 60 的语言规则经过精心设计，保证了程序块实例的生存期彼此嵌套：后激活的实例先消失。正是这一特性，使 ALGOL 60 的实现能够利用栈来动态分配和释放存储空间。但它也有一个缺点：创建新程序块实例的程序，永远无法把这个实例当作一个存在着并具有属性的对象来与之交互，因为在调用程序重新取得控制权时，该实例已经消失。因此，调用程序只能观察到它所调用过程的动作结果。其后果是，程序块的操作方面受到过分强调；能够用它建模的概念，只限于算法（例如矩阵乘法）。
+
+在 SIMULA 67 中，程序块实例可以在调用它的语句执行完毕后继续存在，只要程序还需要引用它，它就可以保留下来。它甚至可以比创建它的那个程序块实例存在得更久。于是，存储分配就无法再用一个简单的栈来管理；我们需要一个通用的垃圾回收器，其中包括扫描标记操作，用来识别和回收运行中的程序已经无法引用的存储区域（即程序块实例的局部工作空间）。接受这种额外复杂性的理由，是它可以方便地表达更广泛的概念。尤其是，它能够以一种在 ALGOL 60 中很难实现、甚至无法实现的方式，阐明数据与可施于数据的操作之间的关系。
+
+\section[对象类]{对象类}
+
+如果一个过程能够产生在调用结束后仍然存在的程序块实例，我们就称这个过程为类；这些实例则称为该类的对象。类的声明方式与过程完全相同，可以带参数，也可以不带参数：
+
+\quad $\langle$class declaration$\rangle ::=$ \textbf{class} $\langle$class identifier$\rangle$
+
+\tabto*{11.6em}$\langle$formal parameter part$\rangle$; $\langle$specification part$\rangle$;
+
+\tabto*{11.6em}$\langle$class body$\rangle$
+
+\quad $\langle$class body$\rangle ::= \langle$statement$\rangle$
+
+在类体中声明的局部变量或局部过程，称为该类的\textit{属性}；形式参数也是属性，无论它按值传递
+还是按引用传递。如果类体不是程序块，就把它看成被程序块括号 \textbf{begin}\dots\textbf{end} 包围起来的程序块。
+
+调用一个类，就会生成该类的一个新对象。与形式参数相对应的那些属性，其初值由生成器的实际参数部分给出。生成器总是以函数指示符的形式出现，其返回值是对新生成对象的一个\textit{引用}：
+
+\quad $\langle$object generator$\rangle ::=$ \textbf{new} $\langle$class identifier$\rangle$
+
+\tabto*{11.6em}$\langle$actual parameter part$\rangle$
+
+为了以后还能引用生成的对象，需要把指向它的引用存入一个变量。用于此目的的变量应声明为\textit{引用}类型；声明中还应指明该变量所引用对象所属的类，以此作出\textit{限定}。
+
+\quad $\langle$reference variable declaration$\rangle ::=$ \textbf{ref} $(\langle $qualification$\rangle) \langle$identifier list$\rangle$
+
+\quad $\langle$qualification$\rangle ::= \langle$class identifier$\rangle$
+
+\noindent
+记法 \textbf{ref} $(\langle$qualification$\rangle)$ 也可以用来声明引用数组、返回引用的过程以及引用参数。Hoare 最先提出过一种类似的“记录处理”机制 [\hyperref[ref:6]{6}]。
+
+有一个不引用任何对象的中性引用值 \textbf{none}；每个引用变量都会自动以它作为初值。
+
+引用值可以赋值，也可以检验是否相等或不等；不过，SIMULA 为这些操作采用了专门的符号，强调它们操作的是对象引用，而不是这些对象当前包含的值。
+
+\noindent
+因此：
+
+\quad $:-$\tabto*{5.6em} 表示引用赋值
+
+\quad $=\ =$\tabto*{5.6em} 表示引用相等
+
+\quad $=/=$\tabto*{5.6em} 表示引用不等。
+
+\noindent
+引用值也可以作为参数传递，或作为函数指示符的结果返回。一个特殊的例子当然就是对象生成器：它创建对象，并把指向该对象的引用作为结果返回。
+
+\noindent
+\textit{例}：
+
+\quad \textbf{class} $C(\dots)$; \dots $C$ 的类体\dots;
+
+\quad \textbf{ref} $(C)X$;
+
+\qquad \dots
+
+\qquad \textbf{if} $X ==$ \textbf{none then} $X$: $-$ \textbf{new} $C(\dots)$;
+
+任何对象的属性，都可以通过\textit{远程标识}（remote identification，指通过对象引用访问属性）技术来查看或修改。如果 $X$ 是以类 $C$ 限定的引用变量，而 $A$ 是该类的属性标识符（即局部量），那么 $X.\,A$ 就引用 $X$ 当前所指对象的属性 $A$。如果 $X$ 的值为 \textbf{none}，这种远程访问就是错误的。如果 $A$ 是变量属性，$X.\,A$ 可以出现在赋值语句左侧、作为实际参数，或出现在表达式中。如果 $A$ 是过程属性，$X.\,A$ 可以作为实际参数，也可以作为过程语句或函数指示符；在后两种情况下，其后须紧跟实际参数部分。总之，除声明中定义标识符的位置以外，普通标识符可以出现的任何上下文，都可以出现远程标识符 $X.\,A$。
+
+除了引用变量，每个引用参数、返回引用的函数或引用表达式，也都有相应的限定。每次向引用变量赋值时，可以通过比较左右两侧的限定，检查赋值是否合法。SIMULA 67 的设计保证了这项检查可以完全在编译时进行，从而避免运行时检查的低效和运行时出错的不便。此外，所有远程标识符都可以在编译时检查，以保证引用变量与属性标识符的组合合法；因此，唯一必须在运行时检测的错误，就是引用变量的值为 \textbf{none}。
+
+下面几小节给出一些用类声明进行概念建模的例子。
+
+
+\subsection{频数直方图}
+\label{sec:frequency-histogram}
+
+对于给定的一组互不相交的区间，实值随机变量的频数直方图可以用一张整数表 $T_0, T_1, \dots, T_n$ 表示，其中 $T_i$ 是落入第 $i$ 个区间的观测次数。递增的数列 $X_1, X_2, \dots, X_n$ 把实数轴划分为以下 $n + 1$ 个区间：
+$$
+\langle -\infty, X_1\rangle, (X_1, X_2\rangle, \dots, (X_n, \infty\rangle.
+$$
+
+\noindent
+第 $i$ 个区间的相对频率 $(i = 0, 1, \dots, n)$ 等于 $T_i / N$，其中 $N$ 是直方图累计记录的观测总次数。
+
+我们希望把直方图这个概念表示为一段独立自足的程序，以便纳入以后编写的任何需要它的程序。在实际程序中，需要维护多个直方图，分别统计不同的随机变量；例如，可能既要记录随机的长度，也要记录随机的重量和高度，这就需要三个彼此独立的直方图。它们必须同时存在，并与创建、使用它们的主程序并存。此外，各个直方图的区间个数以及划分区间的界值，都可能不同。因此，适合把直方图声明为一个带有两个参数的\textit{类}：
+
+\quad \textbf{class} histogram$(X, n)$; \textbf{array} $X$; \textbf{integer} $n$;
+
+\noindent
+其中 $X$ 是包含 $n$ 个元素的实数数组，给出划分区间的边界。主程序将按如下方式使用这个类：
+
+\quad \textbf{begin ref} $($histogram$)$ heights, weights, lengths;
+
+\quad \quad \textbf{real array} $A[1:7]$, $B[1:12]$;
+
+\quad \quad \dots 初始化 $A$、$B$\dots;
+
+\quad \quad heights: $-$ \textbf{new} histogram$(A,\ 7)$;
+
+\quad \quad weights: $-$ \textbf{new} histogram$(B,\ 12)$;
+
+\quad \quad lengths: $-$ \textbf{new} histogram$(A,\ 7)$;
+
+\quad \quad \dots 程序的其余部分\dots
+
+\quad \textbf{end}
+
+在程序的其余部分，可以用这三个引用变量的名字来引用三个直方图。为了把每个新观测值（例如 $h$ 或 $w$）记录到相应的直方图中，程序将包含对过程 tabulate 的相应调用：
+
+\quad weights.tabulate$(w);$
+
+\quad heights.tabulate$(h);$
+
+\noindent
+因此，过程 ``tabulate'' 必须是 histogram 类的一个属性。该类还必须包含一个属性数组 $T$，用来累计每个区间内的观测次数；以及一个变量 $N$，用来累计到目前为止记录的观测总次数。最后，还需要一个函数 frequency$(i)$，用来读出第 $i$ 个区间内观测值的相对频率。类体只需执行一项动作：初始化这些变量。
+
+histogram 类的声明可以写成：
+
+\quad \textbf{class} histogram$(X,\ n)$; \textbf{array} $X$; \textbf{integer} $n$;
+
+\quad \quad \textbf{begin integer} $N$; \textbf{integer array} $T[0:n]$;
+
+\quad \quad \quad \textbf{procedure} tabulate$(Y)$; \textbf{real} $Y$;
+
+\quad \quad \quad \quad \textbf{begin integer} $i$; $i\coloneq 0$;
+
+\quad \quad \quad \quad \quad \textbf{while} (\textbf{if} $i < n$ \textbf{then} $Y < X[i + 1]$ \textbf{else false}$)$
+
+\quad \quad \quad \quad \quad \quad \textbf{do} $i\coloneq i + 1$;
+
+\quad \quad \quad \quad \quad $T[i] \coloneq T[i] + 1; N\coloneq N + 1$
+
+\quad \quad \quad \quad \textbf{end} of tabulate;
+
+\quad \quad \quad \textbf{real procedure} frequency$(i)$; \textbf{integer} $i$;
+
+\quad \quad \quad \quad frequency $\coloneq T[i]/N$;
+
+\quad \quad \quad \textbf{integer} i;
+
+\quad \quad \quad \textbf{for} $i\coloneq 0$ \textbf{step} 1 \textbf{until} $n$ \textbf{do} $T[i]\coloneq 0;\ N\coloneq 0$
+
+\quad \textbf{end} of histogram;
+
+\textit{注}。（1）在 SIMULA 67 中，类或过程的所有简单参数都按值传递，即使省略了传值部分的说明也是如此。数组及其他参数按名传递。
+
+（2）在 SIMULA 67 中，所有变量在声明时都会自动初始化为中性值：布尔量为 \textbf{false}，数值为 0，引用为 \textbf{none}。因此，在上面的例子中，语句 $i\coloneq 0$、$N\coloneq 0$ 以及初始化 $T$ 的循环，都可以省略。
+
+我们似乎有理由认为，这段程序恰当地表示了直方图的概念，因为它表达了数据项 $X$、$n$、$T$ 和 $N$ 与要施于这些数据项的统计操作之间
+的密切关系。当然，也可以在 ALGOL 60 中把这项
+操作写成一个带有许多参数的独立过程：
+
+\quad \textbf{procedure} tabulate$(X,\ n,\ T,\ N,\ y)$;
+
+\noindent
+它根据 $X$ 定义的区间划分，把观测值 $y$ 记录在直方图 $T$ 中，同时将 $N$ 增加一。但这人为地把直方图的操作方面
+与其数据存储方面分离了；过程说明的复杂和使用时的笨拙，表明它未能恰当地表示这个概念。
+
+下面解释一下通过这条语句创建 histogram 类新对象的效果：
+
+\quad weights: $-$ \textbf{new} histogram$(B,\ 12)$.
+
+\noindent
+首先，创建一个新对象，它由执行 $T$、$N$、$i$ 的声明时产生的变量，以及参数 $X$ 和 $n$ 组成；这两个参数分别初始化为 $B$ 和 12。然后执行类声明的主体，初始化其他变量。退出类体时，这些变量所占的存储空间\textit{不会}被释放；相反，指向它们的引用（指针、地址）被返回，并赋给变量 ``weights''。我们可以把对象看成类体（包括说明部分）的一份完整文本副本，其中参数、局部变量和数组都对应着实际的存储位置。这种看法很方便。因此，一个对象完全可以既包含局部过程声明（甚至局部类声明），也包含可执行语句。
+
+此后，执行过程调用 weights. tabulate($w$) 时，实际执行的是 ``weights'' 所引用对象内部的局部过程 tabulate；它只会更新该对象的局部属性 $T$ 和 $N$，不会更新其他对象的属性。
+
+\subsection{高斯积分}
+
+定积分可以用“$n$ 点高斯公式”来近似。该公式是在积分区间内某些特定点上计算的 $n$ 个函数值的加权和。
+$$
+\int_a^b f(x)\text{d}x \approx \sum_{i = 1}^n w_i f(x_i)
+$$
+
+\noindent
+权重和横坐标的选取方式，保证该公式对任何次数小于 $2n$ 的多项式积分都给出精确结果。通过适当的变换，可以得到
+$$
+w_i = (b - a)W_i \quad\text{且}\quad x_i = a + (b - a)X_i,
+$$
+
+\noindent
+其中 $W_i$ 和 $X_i(i = 1, 2, \dots, n)$ 只依赖于 $n$，与 $a$、$b$ 无关。下面这个部分采用非形式化写法的类声明，表达了高斯积分的思想。
+
+\quad \textbf{class} Gauss$(n)$; \textbf{integer} $n$;
+
+\quad \textbf{begin array} $W$, $X[1:n]$;
+
+\quad \quad \textbf{real procedure} integral$(f,\ a,\ b)$;
+
+\quad \quad \textbf{real procedure} $f$; \textbf{real} $a$, $b$;
+
+\quad \quad integral $\coloneq \sum_{i=1}^n W[i] \times f(a + (b - a)\times X[i])\times (b- a)$;
+
+\quad \quad 根据 $n$ 计算 $W[1], \dots, W[n], X[1], \dots, X[n]$，
+
+\quad \quad 它们都是 $n$ 的函数
+
+\quad \textbf{end} of Gauss;
+
+\quad \dots
+
+\quad \textbf{ref} $($Gauss$)$ G5, G7;
+
+\quad \dots
+
+\quad G5: $-$ \textbf{new} Gauss$(5)$; G7: $-$ \textbf{new} Gauss$(7)$;
+
+\quad \dots
+
+\quad G5.integral$(F,\ A,\ B)$ \dots G7.integral$(F,\ A,\ B)$\dots
+
+\noindent
+\textit{说明}。变量 G5 和 G7 分别引用“5 点”和“7 点高斯积分”这两个概念。它们各自是
+更一般的“$n$ 点高斯积分”概念的一个\textit{具体实例}，而这个一般概念由类来表示。
+
+Gauss 对象会一次性算出其局部数组元素的值，然后把控制权交还给 $\langle$object generator$\rangle$。过程 ``integral'' 则供对象外部反复调用。
+
+这个例子说明，在此框架中，ALGOL 的 \textit{own} 概念已无必要。
+
+\section{协程}
+
+在 ALGOL 60 中，把两段程序结合起来完成某项任务，一个极有力的方法是把其中一段声明为过程，再从另一段中调用它（必要时反复调用）。然而，有些情况下，这种主从关系并不能恰当地表示两段程序之间的关系；把它们视为在某种意义上处于同一层次的\textit{协程}（coroutines），会更合适。
+
+博弈程序提供了一个简单的协程结构例子：程序计算自己的走法，将它输出给对手，输入对手的应对，再计算下一步走法，如此继续，直到对局结束。现在假定已经编写了两个玩同一种游戏的不同程序，希望看看哪一个棋力更强。把这两个对弈者作为组件，很自然就能构成一个完整的对局程序；但这里采用的是协程的组织方式，而不是子程序的组织方式。
+
+程序设计语言的两遍编译器，是协程结构的另一个例子。第一遍通常输出很长的一串消息，随后由第二遍读入。然而，如果主存足够大，能够同时容纳两遍处理的程序，就可以让整个翻译过程在表面上由一遍处理完成：消息序列从第一遍\textit{逐段}传给第二遍。首先执行第二遍程序，直到它第一次请求输入消息；然后执行第一遍程序，直到它产生第一条输出消息；接着把这条消息交给第二遍程序。重复此过程，直到第二遍完成。在某些情况下，或许可以把其中一遍重组为另一遍的子程序；但选哪一遍作为子程序是任意的，因此最好把两个程序都视为协程。
+
+这个例子与博弈程序的区别在于，信息只沿一个方向流动：从“生产”信息的第一遍程序，流向“消费”信息的第二遍程序。这提示我们，把单个协程视为一个完整、独立自足的程序，会很有用；只不过，它的输入输出指令被替换成了对其他协程的调用，让那些协程生产和消费数据。每当协程为此把控制权交给另一个协程时，它都希望随后从紧接着的下一条指令恢复执行。把控制权转移给另一个协程的指令称为
+
+\quad resume$(X)$
+
+\noindent
+其中 $X$ 引用要恢复执行的协程。
+
+在 SIMULA 中，协程由某个类的对象表示，通过 resume 指令，与同类或其他类的对象协作；这些对象由引用变量命名。信息可以通过变量传递，这些变量可以是所有对象共同的全局变量，也可以是某个对象的局部变量；生产数据的协程为它们赋值，消费数据的协程访问它们。进行双向通信时，两个协程可以轮流更新同一组全局变量。
+
+对象刚生成时，与生成它的程序块实例之间是一种类似过程调用的从属关系。这一点表现在：一旦执行到对象的末尾，控制权就自动返回生成器。对象通常不知道生成它的程序块实例是谁，因此无法用 resume 指令来实现协程退出的效果。为此，语言提供了一条专门的无参数指令 ``detach''，让生成的对象可以把控制权交还给生成器。随后，生成器可以在对象最近一次执行的 detach 指令之后，恢复这个已脱离的对象；所用
+语句是
+
+\quad call$(X)$
+
+\noindent
+其中 $X$ 是对已脱离对象的引用。此时，对象相对于调用者再次处于从属地位，有责任通过 detach 指令或执行到自身的 \textbf{end}，把控制权交还给调用者。
+
+因此，主程序可以使用 call$/$detach 机制，与它生成的对象建立协程关系，而不必使用更为对称的 resume$/$resume 机制。在这种情况下，生成的对象仍从属于主程序，因而有时称为\textit{半协程}（semicoroutine）。不过，半协程相对于另一组已生成的对象，也可以是完整的协程，通过 resume 语句与它们通信。在这种情况下，组内任何对象执行 detach，控制权都会返回最初调用该组某个成员的主控程序。因此，协程执行 resume 语句时，也把自己最终须通过 detach 将控制权交还给最初调用者的责任，转交给被恢复的协程。
+
+设 $X$ 和 $Y$ 是由“主控程序” $M$ 生成的对象。假定 $M$ 执行 call$(X)$，启动 $X$ 的一个“活动阶段”，该阶段由 $X$ 中的 detach 操作结束；然后 $M$ 执行 call$(Y)$，以此类推。这样，$M$ 可以充当“监督者”，安排 $X$、$Y$ 及其他对象的活动阶段的执行次序。每个对象都是一个“从属者”，每次被调用时，就以一个活动阶段作出响应；而 $M$ 负责规定整个计算的总体执行模式。
+\begin{center}
+	\includegraphics[width=.3\textwidth]{chap3/fig1}
+\end{center}
+
+\noindent
+另一种方式是把决策“分散”出去，让对象自己通过 resume 操作决定接下来执行哪个对象。
+
+\begin{center}
+	\includegraphics[width=.44\textwidth]{chap3/fig2}
+\end{center}
+
+\noindent
+由 $X$ 执行的 resume$(Y)$ 操作，相当于先退出 $X$（通过 detach），再执行 call$(Y)$，从而绕过 $M$。把控制权交还给 $M$ 的责任也随之转移给 $Y$。
+
+一个典型协程对象的经历，可以概括如下：
+
+\begin{enumerate}[wide, nosep, label=(\arabic*)]
+	\item 生成时，对象开始执行其类体中的操作；此时称它\textit{正在运行}，并\textit{附着}于创建它的对象生成器（所在的程序块实例）。
+	\item 对象执行一条 \textit{detach} 语句，把控制权交还给生成对象的位置。此时称对象已经脱离，但尚未终止。detach 语句在对象的主体中留下一个标记，指出以后继续执行其操作的位置。这个标记位于该对象最近一次执行的 detach 语句末尾。
+	\item 当执行 call 或 resume 语句，并通过引用参数指定该对象时，控制权便返回该对象。如果使用 call，它就\textit{重新附着}于\textit{调用它的}程序块实例；如果使用 resume，则重新附着于最初的调用者。此后，对象可以再次通过 detach 或 resume 暂时交出控制权；在这种情况下，它再次成为脱离状态。
+	\item 或者，对象可以通过执行到自身的 \textbf{end}，最终交出控制权，这具有与 detach 相同的效果。但此时称它已经\textit{终止}，不能再通过 call 或 resume 重新激活。不过，它仍作为一项数据存在，可以通过远程标识来引用其属性，包括过程和函数属性，就像前面直方图的情形一样。
+\end{enumerate}
+
+\textit{注}。detach 操作表示从一个\textit{对象}中作协程退出，它只允许出现在对象的文本内部，即类体的文本内部。如果在子程序块或过程体中执行 detach，它仍表示退出在文本上包含它的最内层对象。对于 resume 指令（其中也包含协程退出），
+情况也一样。然而，call 指令可以用在程序中的任何位置。
+
+\subsection{文本转换}
+
+我们用 Conway 提出的一个问题 [\hyperref[ref:7]{7}] 来说明协程的协作。需要从卡片中读入一段文本，再用行式打印机打印出来。每张卡片含 80 个字符，而打印机每行打印 125 个字符。目标是让每个输出行尽可能装满字符，卡片之间的过渡只通过额外插入一个空格来标记。文本中任何连续的两个星号都要替换成 ``$\uparrow$''。文本末尾用一个称为 ``end'' 的特殊字符标记。
+
+假定已有一个协程 ``incard''，每次恢复执行时，它都从进卡槽中的下一张卡片读取字符，填入数组 $C[1 : 80]$，然后把卡片送到收卡槽。此外，已有一个协程 ``lineout''，每次恢复执行时，它都把数组 $L[1 : 125]$ 中的字符打印到纸上的下一行，然后换行。
+
+这项任务由三个协程完成，分别通过以下引用来识别：
+
+\quad \textbf{ref} disassembler, squasher, assembler;
+
+disassembler 通过 $C$ 输入一张卡片，在卡片之间插入空格，再通过 $c1$ 把字符逐个输出给 squasher。squasher 完成双星号的转换，并通过 $c2$ 把字符逐个输出给 assembler。assembler 把字符组装成行并输出；它还负责检测 ``end'' 字符并作相应处理。
+
+所需的类声明如下：
+
+\quad \textbf{class} pass 1;
+
+\quad \textbf{begin} detach;
+
+\quad \quad \textbf{while true do}
+
+\quad \quad \quad \textbf{begin integer} $i$; resume$($incard$)$;
+
+\quad \quad \quad \quad \textbf{for} $i\coloneq 1$ \textbf{step} 1 \textbf{until} 80 \textbf{do}
+
+\quad \quad \quad \quad \quad \textbf{begin} $c1\coloneq C[i]$; resume$($squasher$)$ \textbf{end};
+
+\quad \quad \quad \quad $c1\coloneq$ blank; resume$($squasher$)$
+
+\quad \quad \quad \textbf{end} infinite loop;
+
+\quad \textbf{end} pass 1;
+
+\quad \textbf{class} pass 2;
+
+\quad \textbf{begin} detach;
+
+\quad \quad \textbf{while true do}
+
+\quad \quad \quad \textbf{begin if} $c1 =$ ``*'' \textbf{then}
+
+\quad \quad \quad \quad \textbf{begin} resume$($disassembler$)$;
+
+\quad \quad \quad \quad \quad \textbf{if} $c1 =$ ``*'' \textbf{then} c2: = ``$\uparrow$''
+
+\quad \quad \quad \quad \quad \textbf{else begin} $c2 \coloneq$ ``*''; resume$($assembler$)$;
+
+\quad \quad \quad \quad \quad \quad $c2\coloneq c1$
+
+\quad \quad \quad \quad \quad \textbf{end};
+
+\quad \quad \quad \quad \textbf{end}
+
+\quad \quad \quad \textbf{else} $c2\coloneq c1$;
+
+\quad \quad \quad resume (assembler); resume (disassembler)
+
+\quad \textbf{end} infinite loop;
+
+\quad \textbf{end} pass 2;
+
+\quad \textbf{class} pass 3;
+
+\quad \textbf{begin} detach;
+
+\quad \quad \textbf{while true do}
+
+\quad \quad \quad \textbf{begin integer} $i$;
+
+\quad \quad \quad \quad \textbf{for} $i\coloneq 1$ \textbf{step} $1$ \textbf{until} 125 \textbf{do}
+
+\quad \quad \quad \quad \quad \textbf{begin} $L[i] \coloneq c2$;
+
+\quad \quad \quad \quad \quad \quad \textbf{if} $c2 =$ ``end'' \textbf{then}
+
+\quad \quad \quad \quad \quad \quad \textbf{begin for} $i\coloneq i + 1$ \textbf{step} 1 \textbf{until} 125 \textbf{do}
+
+\quad \quad \quad \quad \quad \quad \quad $L[i] \coloneq$ blank;
+
+\quad \quad \quad \quad \quad \quad \quad resume$($lineout$)$;
+
+\quad \quad \quad \quad \quad \quad \quad detach; \textbf{comment} 返回主程序;
+
+\quad \quad \quad \quad \quad \quad \textbf{end}
+
+\quad \quad \quad \quad \quad \quad \textbf{else} resume$($squasher$)$
+
+\quad \quad \quad \quad \quad \quad \textbf{end} of this line;
+
+\quad \quad \quad \quad resume$($lineout$)$
+
+\quad \quad \quad \textbf{end} infinite loop
+
+\quad \textbf{end} pass 3;
+
+主程序为每一遍处理生成一个实例。每个实例都立即从主程序脱离。调用 disassembler，便启动了整个协程系统。检测到任务结束时，assembler 执行 detach 指令。由于 assembler 是通过来自 disassembler 的 resume 指令（间接地）取得控制权的，它执行 detach 的效果，与 disassembler 执行 detach 的效果相同：控制权返回主程序，而主程序随即终止。
+
+主程序如下：
+
+\quad \textbf{begin} disassembler: $-$ \textbf{new} pass 1;
+
+\quad \quad squasher: $-$ \textbf{new} pass 2;
+
+\quad \quad assembler: $-$ \textbf{new} pass 3;
+
+\quad \quad call$($disassembler$)$;
+
+\quad \textbf{end}
+
+五个协程与主程序之间的关系，可以用图表示：
+\begin{center}
+	\includegraphics[width=.7\textwidth]{chap3/fig3}
+\end{center}
+
+\noindent
+水平箭头表示 resume$/$resume 关系。箭头方向对应信息流的方向，箭头旁标注的变量名则指出用于保存所传递信息的变量。
+
+在这个例子中，每个类始终只打算拥有一个对象，因此，完整的类$/$生成$/$引用机制显得过于繁复。其不便之处在于，必须为类和它唯一的对象分别取名（例如 pass 1 和 disassembler）。此外，在实现中，理应可以利用这种特殊情形，同时节省空间和时间。但 SIMULA 67 并没有提供实现这一点的手段。
+
+\subsection{排列生成器}
+
+我们希望定义一个 ``permuter'' 类，表示排列的概念。该类的对象应能生成从 1 到 $n$ 的整数的所有排列，其中 $n$ 是类的一个参数。类的一个属性是一个 \textbf{integer array} $p[1:n]$；生成该类对象时，它初始化为 $(1, 2, \dots, n)$（表示恒等排列）。此后，每次调用对象
+都会使数组 $p$ 取一个新的排列作为值。当所有排列都生成完毕时，属性
+
+\quad \textbf{Boolean} more;
+
+\noindent
+（初值为 true）会被赋予 \textbf{false}，对象也随之终止。
+
+如果程序要考察 $N$ 个数的所有排列，其典型结构如下：
+
+\quad \textbf{ref} $($permuter$)P$;
+
+\quad $P$: $-$ \textbf{new} permuter$(N)$;
+
+\quad \textbf{while} $P$.more \textbf{do}
+
+\quad \quad \textbf{begin}\dots 考察 $P.p$\dots; call$(P)$ \textbf{end};
+
+\noindent
+permuter 类采用半协程结构，每次更新 $p$ 后，都会执行一条 detach 指令：
+
+\quad \textbf{class} permuter$(n)$; \textbf{integer} $n$;
+
+\quad \quad \textbf{begin integer array} $p[1:n]$;
+
+\quad \quad \quad \textbf{Boolean} more;
+
+\quad \quad \quad \textbf{integer} $q$;
+
+\quad \quad \quad \textbf{for} $q\coloneq 1$ \textbf{step} 1 \textbf{until} $n$ \textbf{do} $p[q]\coloneq q$;
+
+\quad \quad \quad more $\coloneq$ \textbf{true};
+
+\tabto*{3.3em} \dots 生成 $p$ 的所有排列，
+
+\quad \quad \quad 每生成一个排列就执行一次 ``detach''\dots;
+
+\quad \quad \quad more $\coloneq$ \textbf{false}
+
+\quad \quad \textbf{end}
+
+接下来还要寻找一个算法，生成 $p[1]$、$p[2]$、\dots、$p[n]$ 的所有排列，并将它们恢复到原来的状态。这个算法可以采用递归结构。假定我们已经知道如何生成下面这些数的\textit{所有}排列：
+
+\quad $p[1], p[2], \dots, p[k - 1],$
+
+\noindent
+并最终把它们恢复到原来的状态。完成这件事的过程调用是
+
+\quad permute$(k - 1)$.
+
+\noindent
+现在，只需用这个过程，把原来的 $k$ 个数中每个由 $k - 1$ 个数组成的\textit{组合}进行全排列。因此，必须调用 permute$(k - 1)$ 共 $k$ 次；每次调用时，$1 \leqslant i \leqslant k$ 范围内的 $p[i]$ 中，恰有一个必须排除在操作之外。一个好办法是把它的值与 $p[k]$ 的值交换，因为 permute$(k - 1)$ 不会触及 $p[k]$。要保证 $k$ 个值各被排除恰好一次，可以利用我们所作的假定：过程返回时，给定序列保持不变。这样，依次交换 $p[1]$ 与 $p[k]$、$p[2]$ 与 $p[k]$、\dots、$p[k - 1]$ 与 $p[k]$，就能使每个值都恰好一次被赋给 $p[k]$。由此得到下面的核心程序：
+
+\quad \textbf{integer} $i$;
+
+\quad permute$(k - 1)$;
+
+\quad \textbf{for} $i\coloneq 1$ \textbf{step} 1 \textbf{until} $k - 1$ \textbf{do}
+
+\quad \quad \textbf{begin} swap$(p[i]$, $p[k])$; permute$(k - 1)$ \textbf{end};
+
+\noindent
+假定 permute$(k - 1)$ 不改变 p，这段核心程序的净效果，是把元素 $p[1]$、$p[2]$、\dots、$p[k]$ 向右循环移动一位。下面的例子可以说明这一点：
+
+\quad 原始状态：\tabto*{12em}  1 2 3 4 5
+
+\quad 执行 swap$(p[1], p[5])$ 后：\tabto*{12em} 5 2 3 4 1
+
+\quad 执行 swap$(p[2], p[5])$ 后：\tabto*{12em}  5 1 3 4 2
+
+\quad 执行 swap$(p[3], p[5])$ 后：\tabto*{12em}  5 1 2 4 3
+
+\quad 执行 swap$(p[4], p[5])$ 后：\tabto*{12em}  5 1 2 3 4
+
+\noindent
+由于整个操作结束后必须使数组 $p$ 恢复原状，因此右循环移位之后，还须作一次补偿性的左循环移位。
+
+\quad $q\coloneq p[1];$
+
+\quad \textbf{for} $i\coloneq 1$ \textbf{step} 1 \textbf{until} $k - 1$ \textbf{do} $p[i]\coloneq p[i + 1]$;
+
+\quad $p[k]: = q$
+
+\noindent
+最后，需要确定 $k = 1$ 时应执行什么操作。回想一下，这个过程的目的在于
+
+\hangindent=1.9\parindent\quad “生成 $k$ 个对象的所有排列，每生成一个排列就执行一条 detach 指令”。
+
+\noindent
+一个数只有一种排列，就是它自身，因此只需执行一条 detach 指令。
+
+permute 过程必须写成 permuter 类的一个属性，使它执行的 detach 针对相应的对象。现在可以声明整个类：
+
+\quad \textbf{class} permuter$(n)$; \textbf{integer} $n$;
+
+\quad \textbf{begin integer array} $p[1:n]$; \textbf{integer} $q$; \textbf{Boolean} more;
+
+\quad \quad \textbf{procedure} permute$(k)$; \textbf{integer} $k$;
+
+\quad \quad \textbf{if} $k = 1$ \textbf{then} detach \textbf{else}
+
+\quad \quad \textbf{begin integer} $i$; permute$(k - 1)$;
+
+\quad \quad \quad \textbf{for} $i\coloneq 1$ \textbf{step} 1 \textbf{until} $k - 1$ \textbf{do}
+
+\quad \quad \quad \textbf{begin} $q\coloneq p[i]$; $p[i]\coloneq p[k]$;
+
+\quad \quad \quad \quad $p[k]\coloneq q$; permute$(k - 1)$
+
+\quad \quad \quad \textbf{end};
+
+\quad \quad \quad $q\coloneq p[1]$;
+
+\quad \quad \quad \textbf{for} $i\coloneq 1$ \textbf{step} 1 \textbf{until} $k - 1$ \textbf{do} $p[i] \coloneq p[i + 1]$;
+
+\quad \quad \quad $p[k]\coloneq q$
+
+\quad \quad \textbf{end} of permute;
+
+\quad \quad \textbf{for} $q\coloneq 1$ \textbf{step} 1 \textbf{until} $n$ \textbf{do} $p[q] \coloneq q$;
+
+\quad \quad \quad more $\coloneq$ \textbf{true}; permute$(n)$; more $\coloneq$ \textbf{false}
+
+\quad \textbf{end} of permuter;
+
+\textit{注}。permute 过程实例所执行的 detach，\textit{不是}退出该过程实例，也不会把控制权交还给调用该过程的位置。它是从整个对象（包括整个递归过程）中作一次暂时退出，把控制权交还给生成或调用该对象的主程序。因此，下一次调用对象时，递归过程会从上次暂停的位置原样继续。
+
+规定（假定）permute 过程应使序列保持不变，实际上完全是一种任意的选择。请读者用同样的交换策略编写一个过程，使它返回时各个数的顺序恰好反转，以此验证这一点。
+
+\section[链表结构]{链表结构}
+
+上面介绍的类声明和对象引用机制，
+可以用来表示栈、树这样的递归数据结构，
+甚至可以表示双向链表这样的循环结构。实现的方法是
+把一个类的某些属性声明为引用，所引用的对象仍属于
+这个类本身。
+
+\subsection{二叉搜索树}
+
+二叉树可以定义为
+
+\quad 或者 \tabto*{5.35em}$($i$)$ \tabto*{7.35em}\textbf{none}
+
+\tabto*{4em}或者 $($ii$)$ 一个节点，
+
+\noindent
+其中节点由以下部分组成：
+
+\begin{enumerate}[wide, nosep, label=(\alph*)]
+	\item 左分量，它是一棵树
+	\item 右分量，它是一棵树
+	\item val，它是一个整数。
+\end{enumerate}
+
+\noindent
+可以把 val 分量看作与树的每个节点相关联的值。左右子树都为 \textbf{none} 的节点，是树的终端元素（叶节点）。
+
+二叉搜索树是一种二叉树：它或者是 \textbf{none}，或者是一个节点，该节点的 val 介于左子树所有 val 与右子树所有 val 之间，而且左右子树本身也都是二叉搜索树。二叉搜索树的用途，是对于任意整数，都能快速访问 val 等于该整数的节点；同时，也能快速插入具有任意给定 val 的新节点。因此，表示二叉搜索树概念的类具有以下形式：
+
+\quad \textbf{class} tree$($val$)$; \textbf{integer} val;
+
+\quad \quad \textbf{begin ref} $($tree$)$ left, right;
+
+\quad \quad \quad \textbf{procedure} insert$(x)$; \textbf{integer} $x$;
+
+\quad \quad \quad \quad \dots
+
+\quad \quad \quad \textbf{ref} $($tree$)$ \textbf{procedure} find$(x)$; \textbf{integer} $x$;
+
+\quad \quad \quad \quad \dots
+
+\quad \quad \textbf{end} of tree;
+
+这两个过程组件的主体，都是很简单的递归过程，与树的递归结构相对应：
+
+\quad insert: \textbf{if} $x <$ val \textbf{then}
+
+\quad \quad \textbf{begin if} left $==$ \textbf{none then} left: $-$ \textbf{new} tree$(x)$ \textbf{else} left.insert$(x)$
+
+\quad \quad \textbf{end}
+
+\quad \textbf{else if} right $==$ \textbf{none then} right: $-$ \textbf{new} tree$(x)$ \textbf{else} right.insert$(x)$;
+\smallskip
+
+\quad find: \textbf{if} $x =$ val \textbf{then this} tree
+
+\quad \textbf{else if} $x <$ val \textbf{then} $($\textbf{if} left $==$ \textbf{none then none else} left.find$(x))$
+
+\quad \textbf{else if} right $==$ \textbf{none then none else} right.find$(x);$
+
+\noindent
+在 ``find'' 的主体中，出现了表达式
+
+\quad \textbf{this} tree
+
+\noindent
+它返回对当前节点的引用，也就是拥有 find 属性这个具体实例的节点。例如，如果用下面的函数指示符调用 $X$ 的 find 过程，
+
+\quad $X.$find$(x)$
+
+\noindent
+并且 $X.\text{val} = x$，那么函数结果就是 $X$ 自身的引用值。
+
+对二叉搜索树，另一项有意义的操作是按升序扫描其全部值。这项操作可以由一个“生产数据”的半协程实现；每次调用时，它把树中下一个较大节点值赋给如下属性：
+
+\quad \textbf{integer} current;
+
+\noindent
+扫描完整棵树后，属性 current 将取最大整数值。
+
+扫描可以通过一个递归的过程属性完成，它是相应协程实例的局部过程。
+
+\quad \textbf{class} scanner$(X)$; \textbf{ref} $($tree$)\ X$;
+
+\quad \quad \textbf{begin integer} current;
+
+\quad \quad \quad \textbf{procedure} traverse$(X)$; \textbf{ref} $($tree$)\ X$;
+
+\quad \quad \quad \quad \textbf{if} $X =/=$ \textbf{none then}
+
+\quad \quad \quad \quad \quad \textbf{begin} traverse$(X$.left$)$;
+
+\quad \quad \quad \quad \quad \quad current $\coloneq X$.val;
+
+\quad \quad \quad \quad \quad \quad detach;
+
+\quad \quad \quad \quad \quad \quad traverse$(X$.right$)$
+
+\quad \quad \quad \quad \quad \textbf{end} traverse;
+
+\quad \quad \quad traverse$(X)$;
+
+\quad \quad \quad current $\coloneq$ integer max
+
+\quad \quad \textbf{end} scanner;
+
+作为使用这些概念的例子，我们考虑合并几棵二叉搜索树中的值。这些树保存在一个数组中：
+
+\quad \textbf{ref} $($tree$)$ \textbf{array} forest$[1: N]$;
+
+\noindent
+目标是按升序输出这些值。为此，需要 $N$ 个扫描器，森林中的每棵树各配一个：
+
+\quad \textbf{ref} $($scanner$)$ \textbf{array} trav$[1: N]$;
+
+\quad \textbf{for} $i\coloneq 1$ \textbf{step} 1 \textbf{until} $N$ \textbf{do} trav$[i]$: $-$ \textbf{new} scanner$($forest$[i]);$
+
+\noindent
+此时，每个扫描器都已将自己的最小 val 赋给自己的 current，并脱离了调用程序。接下来，只需找出 $N$ 个 current 的最小值并输出，然后再次调用对应的扫描器，产生它的下一个较大 val。当最小值成为最大整数值时，合并就完成了。
+
+\quad \textbf{integer} $min,\ j,\ i$;
+
+\quad min $\coloneq 0$;
+
+\quad \textbf{while} min $<$ integer max \textbf{do}
+
+\quad \quad \textbf{begin} min $\coloneq$ trav$[1]$.current; $j\coloneq 1$;
+
+\quad \quad \quad \textbf{for} $i\coloneq 2$ \textbf{step} 1 \textbf{until} $N$ \textbf{do}
+
+\quad \quad \quad \quad \textbf{if} min $>$ trav$[i]$.current \textbf{then}
+
+\quad \quad \quad \quad \quad \textbf{begin} min $\coloneq$ trav$[i]$.current;
+
+\quad \quad \quad \quad \quad \quad $j\coloneq i$
+
+\quad \quad \quad \quad \quad \textbf{end} 搜索最小的 current;
+
+\quad \quad \quad \textbf{if} min $<$ integer max \textbf{then}
+
+\quad \quad \quad \quad \textbf{begin} output$($min$)$;
+
+\quad \quad \quad \quad \quad call$($trav$[j])$
+
+\quad \quad \quad \quad \textbf{end}
+
+\quad \quad \textbf{end} 合并过程;
+
+\subsection{语法分析器}
+
+作为一个更为完整的链表处理例子，我们来看通用的表驱动上下文无关语法分析器。这里采用自顶向下的回溯算法，在文法不含左递归的前提下，它能够发现所有可能的分析（文法有歧义时会有不止一种分析）。符号串用一条“带”来表示，它具有以下操作。
+
+\quad \textbf{procedure} move right; \dots;
+
+\quad \textbf{procedure} move left; \dots;
+
+\quad \textbf{integer procedure} symbol; \dots;
+
+\noindent
+``move'' 操作把读头向右或向左移动一个符号。``symbol'' 过程读出读头下的符号，并按照一一映射把它转换为整数。
+
+给定函数 ``meta''，用来判定某个整数是否表示元符号（meta-symbol）。
+
+\quad \textbf{Boolean procedure} meta$(S)$; \textbf{integer} $S$; \dots;
+
+\noindent
+为简单起见，用一个三维数组 $G$ 表示文法：
+
+\quad \textbf{integer array} $G[\dots, \dots, \dots]$;
+
+\noindent
+其中 $G[i, j, k]$ 保存整数 $i$ 所表示元符号的第 $j$ 个候选右部中的第 $k$ 个符号。还有一个
+
+\quad \textbf{integer array} $jm[\dots]$;
+
+\noindent
+其中 $jm[i]$ 是给定元符号的候选右部数目。每个右部后都接上一个不属于该文法词汇的特殊符号 ``$\perp$''。如果某个语法类别的一项候选定义是 $\langle$empty$\rangle$，就仅用这个符号来表示它。
+
+例如，考虑下面这个简单的上下文无关文法，它描述算术表达式的一个子类：
+
+\begin{enumerate}[wide, nosep, label=(\arabic*)]
+	\item $\langle$exp$\rangle ::= \langle$term$\rangle\ |\ \langle$term$\rangle\langle$addop$\rangle\langle$exp$\rangle$
+	\item $\langle$term$\rangle ::= \langle$primary$\rangle\ |\ \langle$primary$\rangle\langle$mulop$\rangle\langle$term$\rangle$
+	\item $\langle$primary$\rangle ::= \langle$constant$\rangle\ |\ \langle$variable$\rangle\ |\ (\langle$exp$\rangle)$
+	\item $\langle$addop$\rangle ::= +\ |\ -$
+	\item $\langle$mulop$\rangle ::= \times\ |\ /$
+	\item $\langle$constant$\rangle ::= 1\ |\ 2\ |\ 3\ |\ 4\ |\ 5\ |\ 6\ |\ 7\ |\ 8\ |\ 9\ |\ 0$
+	\item $\langle$variable$\rangle ::= I\ |\ J\ |\ K\ |\ L\ |\ M\ |\ N$
+\end{enumerate}
+
+\noindent
+这里有七个元符号，可以赋予它们从 1 到 7 的整数值。22 个终结符可以赋予从 8 到 29 的值，而终止符 ``$\perp$'' 可以赋值为 0。
+
+现在，表示这个文法的数组 $G$ 可以声明为：
+
+\quad \textbf{integer array} $G[1:7, 1:10, 1:4]$
+
+\noindent
+这个数组的第一个平面取值如下：
+
+\quad $G[1,\ .,\ .] = 2,\ 0,\ 0,\ 0$\tabto*{12em} 第一个候选右部
+
+\tabto*{7.4em}$2,\ 4,\ 1,\ 0$\tabto*{12em} 第二个候选右部
+
+\tabto*{7.4em}$0,\ 0,\ 0,\ 0$\tabto*{12em} 其余 8 行
+
+\tabto*{7.4em}\quad\dots\tabto*{12em} 无关紧要。
+
+\tabto*{7.4em}$0,\ 0,\ 0,\ 0$
+
+\noindent
+还请注意：
+
+\quad $jm[1] = 2,\ jm[6] = 10$
+
+\quad meta$(1) =$ meta$(7) =$ \textbf{true}
+
+\quad meta$(8) =$ meta$(29) =$ \textbf{false}
+
+把文本的第一个符号置于读头下，再生成语法分析器的一个实例，我们希望得到的结果是：产生一棵完整的语法树来表示这段文本；读头停在已分析文本最后一个字符\textit{之后}的字符上；变量 ``good'' 被置为 \textbf{true}。以后再调用同一实例，则产生表示其他分析方式的语法树。当再没有其他分析方式时，输入文本退回起点，变量 good 被置为 \textbf{false}。如果输入文本含有语法错误，那么第一次生成实例时就会出现这种情况。
+
+请注意，分析器会找出文本任意前缀的所有成功分析。
+
+每次调用分析器所输出的语法树，都为文本中识别出的每个短语包含一个节点。每个短语具有以下属性：
+
+\quad \textbf{integer} $i$：表示短语的语法类别
+
+\quad \textbf{integer} $j$：表示它属于该类别的哪一个候选项
+
+\quad \textbf{ref} $($phrase$)$ sub：引用给定短语的最后一个子短语
+
+\hangindent=3.2\parindent\quad \textbf{ref} $($phrase$)$ left：引用同一分析层次上紧邻该短语左侧的短语。任何短语的第一个子短语，其 left 都为 \textbf{none}。
+
+\noindent
+因此，表达式
+$$
+M\times N + 7
+$$
+
+\noindent
+应产生图 \ref{fig:syntax-analyzer-1} 所示形式的树。
+
+语法分析器将采用递归结构，由一个短语对象类构成；每个短语对象都会对单个短语，重现整个分析器应具有的行为。
+
+短语对象接收一个元符号 $i$ 和一个左邻短语作为参数，负责生成给定语法类别的所有可能语法树，使之匹配当前符号起及其右侧的一段文本。每次成功分析后，输入文本都前进到\textit{不}属于该次分析的第一个符号处。当所有可能的分析都完成时，带退回进入该短语之前的位置，全局变量 good 被置为 \textbf{false}，短语对象随即终止。
+
+现在可以概述 phrase 类的一般结构：
+
+\quad \textbf{class} phrase$(i,$ left$)$; \textbf{integer} $i$; \textbf{ref} $($phrase$)$ left;
+
+\quad \quad \textbf{begin integer} $j$; \textbf{ref} $($phrase$)$ sub;
+
+\quad \quad \quad \textbf{for} $j\coloneq 1$ \textbf{step} 1 \textbf{until} $jm[i]$ \textbf{do}
+
+\quad \quad \quad \quad \dots 用所有可能的方式将余下的文本
+
+\quad \quad \quad \quad 与类别 $i$ 的第 $j$ 个候选项匹配，
+
+\quad \quad \quad \quad 每次匹配成功后执行一次 detach \dots;
+
+\quad \quad \quad good $\coloneq$ \textbf{false}
+
+\quad \textbf{end} of phrase;
+
+假定某对象已成功匹配了给定元符号 $(i)$ 的某个候选右部 $(j)$ 的前 $k - 1(k > 0)$ 个符号。现在编写一段程序，以所有可能的方式，将第 $k$ 个符号与输入匹配。假定语句 ``match remainder''（匹配余下部分）会以所有可能的方式，把右部尚余的部分（如果有）与输入匹配，并且该语句不改变读头位置，也不改变已经构造出的语法树部分。对于未能识别出（另一个）短语的对象，我们也作出后一项假定。
+
+\begin{enumerate}[nosep, label=\arabic*.]
+	\item \textbf{begin integer} $g$; $g\coloneq G[i, j, k]$;
+	\item \label{en:comment-label-2}
+	\quad \textbf{if} $g =$ ``$\perp$'' \textbf{then begin} good $\coloneq$ \textbf{true}; detach \textbf{end}
+	
+	\item \quad \textbf{else if} $g =$ symbol \textbf{then}
+	
+	\item \label{en:comment-label-4}
+	\quad \textbf{begin} move right; match remainder; move left \textbf{end}
+	
+	\item \quad \textbf{else if} meta$(g)$ \textbf{then}
+	
+	\item \label{en:comment-label-6}
+	\quad \textbf{begin} sub: $-$ \textbf{new} phrase$(g,$ sub$)$;
+	\item \quad \quad \textbf{while} good \textbf{do}
+	
+	\item \label{en:comment-label-8}
+	\quad \quad \textbf{begin} match remainder; call$($sub$)$ \textbf{end};
+	
+	\item \label{en:comment-label-9}
+	\quad \quad sub: $-$ sub.left
+	
+	\item \quad \quad \textbf{end}
+	\item \quad \textbf{end}
+\end{enumerate}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=.6\textwidth]{chap3/fig4}
+	\caption{语法分析器的树形表示}
+	\label{fig:syntax-analyzer-1}
+\end{figure}
+
+\noindent
+\textit{说明}。
+
+\begin{enumerate}[leftmargin=*, itemindent=2.2\parindent, nosep, label=第 \arabic* 行.]
+	\item 为简便起见，把编号为 $j$ 的右部的第 $k$ 个符号称为 $g$。
+	\item 如果 $g$ 是终止符，整个右部就已经成功地与输入匹配。对象向其主控程序报告。第 \hyperref[en:comment-label-2]{2} 行不改变语法树或读头位置。
+
+	\setcounter{enumi}{3}
+	\item 既然符号已匹配，对象就把读头移到下一个符号。在用所有可能的方式匹配余下部分之后，
+	对象恢复读头的位置。因此，根据假定，第 \hyperref[en:comment-label-4]{4} 行的净效果为零。
+	
+	\setcounter{enumi}{5}
+	\item 由于 $g$ 是元符号，生成一个新的 phrase 对象，识别语法类别 $g$ 的子短语。它成为新的最右子短语，其左邻短语是原来的最右子短语。
+	
+	\item 我们已假定，对象失败时会把 ``good'' 置为 \textbf{false}。
+	
+	\item 由于 ``good'' 为 \textbf{true}，已经识别出一个与 $g$ 匹配的子短语。在以所有可能的方式匹配余下部分之后，调用 ``sub''，识别下一个可能的子短语。由于我们要以所有可能的方式匹配 $g$，因此重复第 \hyperref[en:comment-label-8]{8} 行，直到子短语对象失败。
+	
+	\item 根据假定，失败的短语对象，其净效果为零。因此，第 \hyperref[en:comment-label-6]{6}\textendash\hyperref[en:comment-label-8]{8} 行的总效果，是在语法树上添加一个对象。第 \ref{en:comment-label-9} 行将语法树恢复到原来的状态。
+\end{enumerate}
+
+上述说明表明，上面的程序块会以所有可能的方式，匹配符号 $g$ 及其后元符号 $i$ 的第 $j$ 个右部的余下部分，而净效果为零。因此，这个程序块本身满足我们对 ``match remainder'' 语句作出的假定。由此可知，整个匹配算法可以用一个递归过程简洁地表达。下面的类声明描述了整个计算过程。
+
+\quad \textbf{class} phrase$(i$, left$)$; \textbf{integer} $i$; \textbf{ref} $($phrase$)$ left;
+
+\quad \textbf{begin integer} $j$; \textbf{ref} $($phrase$)$ sub;
+
+\quad \quad \textbf{procedure} match$(k)$; \textbf{integer} $k$;
+
+\quad \quad \textbf{begin integer} $g$; $g\coloneq G[i,j, k]$;
+
+\quad \quad \quad \textbf{if} $g =$ ``$\perp$'' \textbf{then begin} good $\coloneq$ \textbf{true}; detach \textbf{end}
+
+\quad \quad \quad \textbf{else if} $g =$ symbol \textbf{then}
+
+\quad \quad \quad \textbf{begin} move right; match$(k + 1)$; move left \textbf{end}
+
+\quad \quad \quad \textbf{else if} meta$(g)$ \textbf{then}
+
+\quad \quad \quad \textbf{begin} sub: $-$ \textbf{new} phrase $(g$, sub$)$;
+
+\quad \quad \quad \quad \textbf{while} good \textbf{do}
+
+\quad \quad \quad \quad \textbf{begin} match$(k + 1)$; call$($sub$)$ \textbf{end};
+
+\quad \quad \quad \quad \quad sub: $-$ sub.left
+
+\quad \quad \quad \quad \textbf{end}
+
+\quad \quad \textbf{end} of match;
+
+\quad \quad \textbf{for} $j\coloneq 1$ \textbf{step} 1 \textbf{until} $jm[i]$ \textbf{do} match$(1);$
+
+\quad \quad good $\coloneq$ \textbf{false}
+
+\quad \textbf{end} of phrase
+
+\noindent
+主控程序可以采用以下结构：
+
+\quad \textbf{ref} $($phrase$)$ tree;
+
+\quad \dots
+
+\quad tree: $-$ \textbf{new} phrase$($start, none$)$;
+
+\quad \textbf{while} good \textbf{do begin} found: \dots; call$($tree$)$ \textbf{end};
+
+\noindent
+其中 ``start'' 表示文法的起始符号。到达标号 ``found'' 时，已经识别出一个句子，变量 ``tree'' 引用按上述方式表示的语法树。对每个节点，都可以通过远程标识，访问其相关元符号 $(i)$、候选右部编号 $(j)$，以及指向其他节点的链接 $($sub, left$)$，例如：
+
+\quad tree.$i$, tree.sub.$j$, tree.sub.left.left.sub.
+
+一般来说，我们必须预料到：从带上同一位置出发，不同成功尝试所匹配的串，长度可能不同。可以通过适当定义语言来避免这一点，使合法文本的任何真前缀都不再是合法文本。另一种办法是在整段文本之后加上一个不属于字母表的符号，比如 ``$\perp$''；此时主控程序可以采用以下结构：
+
+\quad \textbf{ref} $($phrase$)$ parse; \textbf{Boolean} good;
+
+\quad parse: $-$ \textbf{new} phrase $($start, \textbf{none}$)$;
+
+\quad \textbf{while} good \textbf{do}
+
+\quad \textbf{begin if} symbol $=$ ``$\perp$'' \textbf{then} 考察成功的语法分析结果;
+
+\quad \quad call$($parse$)$
+
+\quad \textbf{end}
+
+phrase 类有一个显著特点：每次调用得到的结果都是一棵树，其节点由递归激活、尚未终止的 phrase 对象组成。每个 phrase 对象都有双重作用：既是供主控程序考察的语法树的一部分，又是一组局部变量，供其他 phrase 对象的递归激活使用。正是数据与过程之间的这种紧密联系，使算法能够表述得如此简单、简洁。
+
+请注意，每个 phrase 对象都是一个独立栈的核心，这个栈保存它的局部过程 ``match'' 的递归激活。当某对象执行 detach，表示成功完成一次（子）语法分析时，它的栈达到暂时的最大深度：当前右部的每个符号各占一层，此外还有一层对应于执行 detach 的右部终止符 $\perp$。
+
+因此，成功语法分析的整个动态上下文都被保留下来。再次调用对象以生成另一种分析时，会进行回溯，在此过程中，该对象的 ``match'' 栈逐层缩减。在与右部某个元符号对应的层次，match 过程调用相应的 phrase 对象，生成另一种子分析（第 \hyperref[en:comment-label-8]{8} 行），如此继续。（可联想卓别林《大独裁者》中那一排军官。）
+
+\section{程序串接}
+
+前面几节已经说明，\textit{类}机制可以通过规定数据结构并定义其上的操作，对某些简单概念建模。本节将提出一种方法，在较简单概念的基础上构造更复杂的概念。这使我们能够建立概念的层次结构：复杂概念从属于定义它所依据的那些较简单概念。这种结构技术提供了一种将程序各组成部分结合起来的新方法，称为\textit{串接}（concatenation）。
+
+串接是在两个类 $A$ 与 $B$ 之间，或者在类 $A$ 与程序块 $C$ 之间定义的操作，其结果是一个新的类或程序块。串接包括合并两个组件的属性，并组合它们的动作。串接后对象的形式参数，由第一个组件的形式参数接上第二个组件的形式参数构成；说明部分、声明和语句（如果有）也按同样的方式连接。
+
+在类 $B$ 的声明前加上第一个组件 $A$ 的名字作为前缀，就定义了串接后的类 $B$：
+
+\quad $A$ \textbf{class} $B(b_1, b_2, \dots)$; \dots $b$ 参数的说明;
+
+\quad\quad \textbf{begin}\dots $B$ 的属性\dots; \dots $B$ 的动作\dots \textbf{end}
+
+\noindent
+假定类 $A$ 已定义如下：
+
+\quad \textbf{class} $A(a_1, a_2 , \dots)$; \dots $a$ 参数的说明\dots;
+
+\quad \quad \textbf{begin}\quad $A$ 的属性\dots; \dots $A$ 的动作\dots \textbf{end}.
+
+根据串接规则，类 $B$ 的上述带前缀声明
+所产生的效果，等同于不带前缀的如下声明：
+
+\quad \textbf{class} $B(a_1, a_2, \dots, b_1, b_2, \dots)$; \dots $a$ 参数的说明\dots
+
+\quad \quad \quad $b$ 参数的说明\dots;
+
+\quad \quad \textbf{begin}\dots $A$ 的属性\dots; \dots $B$ 的属性\dots;
+
+\tabto*{5.9em}\dots $A$ 的语句\dots; \dots $B$ 的语句\dots \textbf{end};
+
+\textit{注}。如果 $A$ 的某些局部标识符与 $B$ 的局部标识符相同，就通过系统地更改 $B$ 的标识符来消除名字冲突。程序块也可以用类标识符作前缀：
+
+\quad $A$ \textbf{begin} 声明\dots; \dots 语句 \textbf{end},
+
+\noindent
+其效果与上面的说明相似，只是串接的结果是程序块，而不是类。（如果类 $A$ 有参数，前缀必须包含实际参数部分。）为程序块添加前缀后，在该程序块内部就可以使用 $A$ 的类声明中定义的过程库及相关数据（甚至包括类）。
+
+同一个类可以作为多个不同串接类的前缀。例如，假定程序要处理卡车、公共汽车和私家车。这是三个独立的类，各有自己的属性。但因为它们都是车辆，有些属性（例如牌照号码）是三者共有的。车辆是一个更一般的概念，可以将它单独声明：
+
+\quad \textbf{class} vehicle$($license no$)$; \textbf{integer} license no; \dots;
+
+\noindent
+现在，这个类就可以在其余类声明中用作前缀。
+
+\quad vehicle \textbf{class} truck (load); \textbf{real} load; \dots;
+
+\quad vehicle \textbf{class} bus (seating); \textbf{integer} seating; \dots;
+
+\quad vehicle \textbf{class} car; \dots;
+
+属于带前缀类的对象，是一个复合对象；\textit{除了}前缀部分定义的属性和操作，它还有一些额外的属性和操作。因此，truck 对象具有 license no 和 load，bus 对象具有 license no 和 seating。把 ``truck''、``bus'' 和 ``car'' 视为 vehicle 类的\textit{子类}是合理的；子类的任何对象也都属于前缀类 ``vehicle''。
+
+引用变量可以用前缀类或串接后的类来限定。如果用前缀类限定，它就可以指向\textit{任何}子类的对象；通过远程标识符，可以访问前缀类的任何属性，但不能访问子类新增的属性。用子类限定的引用，只能指向该子类的对象，不过可以通过远程标识符访问它的所有属性。因此，给定引用变量：
+
+\quad \quad \textbf{ref} $($vehicle$)\ V$; \textbf{ref} $($bus$)\ B$;
+
+\quad 下列远程标识符合法：
+
+\quad \quad $V$.license no, $B$.license no, $B$.seating,
+
+\quad 但 $V$.seating 不合法。
+
+\noindent
+由此可见，子类概念使对象引用具有有用的灵活性。“弱”限定允许引用较广范围的对象，但代价是不能通过远程访问取得子类中声明的属性。
+
+把子类引用赋给以前缀类限定的引用变量 $($例如 $V$: $-\ B)$，始终合法，而且可以在编译时确认。然而，反方向的赋值 $($例如 $B$: $-\ V)$，如果所引用对象实际上不属于所期望的子类（bus），就会产生错误，而这种错误只能在运行时检测。
+
+\subsection{二叉搜索树}
+
+假定我们要建立一棵二叉搜索树，保存库存货品的信息。树的每个节点不仅要包含 val（表示货品编号），还要包含现有库存量、价格、再订货点等其他信息。最简单的实现办法，是用 tree 类作 ``stock item'' 类的前缀，再声明所需的额外属性，例如：
+
+\quad tree \textbf{class} stock item;
+
+\quad \quad \textbf{begin integer} $qoh$, price, reorder point;
+
+\quad \quad \quad \textbf{Boolean} ordered;
+
+\quad \quad \quad \textbf{procedure} reduce;
+
+\quad \quad \quad \quad \textbf{begin if} $qoh =$ reorder point \& $\neg$, ordered \textbf{then}
+
+\quad \quad \quad \quad \quad 发出补货订单;
+
+\quad \quad \quad \quad \quad $qoh \coloneq qoh -1$
+
+\quad \quad \quad \quad \textbf{end} of remove;
+
+\quad \quad \textbf{end} of stock item;
+
+\subsection{双向链表}
+
+利用串接技术，可以设计专门或主要用作其他类或程序块前缀的类。本小节给出 TWLIST 类的例子，它用于为程序块添加前缀，使程序块内部能够使用双向循环链表这个概念。这种链表具有一个\textit{链表头}，其中包含两个指针，一个指向链中的第一个元素，另一个指向最后一个元素。链中的每个\textit{链节点}（link）也必须包含两个指针：suc 指向链表中的后继（若无后继则指向链表头），pred 指向链表中的前驱（若无前驱则指向链表头）。空链表中，链表头的两个指针都指向它自身。
+
+系统中的每个指针，都必须既能指向链表中的另一个链节点，也能指向链表头。因此，需要用一个同时涵盖链节点和链表头的类来限定这些指针，也就是 ``linkage'' 类；链节点与链表头都是它的子类。既然链表头和链节点都需要两个引用属性，就可以把 suc 和 pred 声明为前缀类 linkage 的属性。
+
+双向链表这一个概念，由 linkage、link 和链表头这三个类共同表示。为了表明三者应作为一个概念一起理解，把它们的声明集中在同一个类声明 TWLIST 中。任何需要使用这个概念的程序块，都可以用 TWLIST 作前缀。在这样的程序块中，``link'' 类用于作其他类的前缀，那些类规定所存元素的性质；例如，如果货品存放在双向链表而不是二叉搜索树中，声明就是：
+
+\quad link \textbf{class} stock; \dots 同前\dots;
+
+现在，需要确定链表和链节点的一组基本操作。应当能通过下面的过程语句，把链节点 $I$ 从所属链表中移除：
+
+\quad $I$.out;
+
+\noindent
+也应当能用下面的过程语句，把它重新插入某条链表，紧接在链节点 $J$ 之前：
+
+\quad $I$.precede$(J)$;
+
+\noindent
+由于一个链节点至多属于一条链表，这项操作还应当先把 $I$ 从它原先所属的链表中移除。最后，还应当能用下面的过程语句，把一个链节点作为最后一个元素，插入以 $H$ 为头的链表：
+
+\quad $I$.into$(H)$;
+
+对于链表头 $H$，定义以下函数似乎很有用：
+
+\quad $H$.empty,
+
+\noindent
+它检验链表是否为空；
+
+\quad $H$.first
+
+\noindent
+它返回 $H$ 的第一个元素，若无元素则返回 \textbf{none}；以及
+
+\quad $H$.last
+
+\noindent
+它返回 $H$ 的最后一个元素，若无元素则返回 \textbf{none}。
+
+现在可以给出 TWLIST 类的声明：
+
+\begin{enumerate}[nosep, label=\arabic*.]
+	\item \textbf{class} TWLIST;
+	\item \textbf{begin class} linkage; \textbf{begin ref} $($linkage$)$ suc, pred; \textbf{end};
+	\item \quad linkage \textbf{class} link;
+	\item \quad \textbf{begin procedure} out;
+	\item \quad \quad \textbf{if} suc $=/=$ \textbf{none then}
+	\item \quad \quad \textbf{begin} suc.pred: $-$ pred; pred.suc: $-$ suc;
+	\item \quad \quad \quad suc: $-$ pred: $-$ \textbf{none}
+	\item \quad \quad \textbf{end} of out;
+	\item \quad \quad \textbf{procedure} precede$(x)$; \textbf{ref} $($linkage$)\ x$;
+	\item \quad \quad \textbf{begin} out; suc: $-\ x$; pred: $-\ x$.pred;
+	\item \quad \quad \quad suc.pred: $-$ pred.suc: $-$ \textbf{this} link
+	\item \quad \quad \textbf{end} of precede;
+	\item \quad \quad \textbf{procedure} into $(L)$; \textbf{ref} $($list$)\ L$;
+	\item \quad \quad \quad precede$(L)$;
+\end{enumerate}
+
+\hangindent=2.9\parindent\quad \quad \quad \textbf{comment} link 对象的 suc 和 pred 应采用标准初值 \textbf{none}，表示不属于任何链表;
+
+\begin{enumerate}[nosep, label=\arabic*.]
+	\setcounter{enumi}{14}
+	\item \quad \textbf{end} of link;
+	\item \quad linkage \textbf{class} list;
+	\item \quad \textbf{begin ref} $($link$)$ \textbf{procedure} first;
+	\item \quad \quad \quad first: $-$ \textbf{if} empty \textbf{then none else} suc;
+	\item \quad \quad \textbf{ref} $($link$)$ \textbf{procedure} last;
+	\item \quad \quad \quad last: $-$ \textbf{if} empty \textbf{then none else} pred;
+	\item \quad \quad \textbf{Boolean procedure} empty;
+	\item \quad \quad \quad empty: $=$ suc $==$ \textbf{this} list;
+	\item \quad \quad \quad suc: $-$ pred: $-$ \textbf{this} list
+\end{enumerate}
+
+\hangindent=3.6\parindent\quad \quad \quad \quad \textbf{comment} 链表头的 suc 和 pred 应初始化为表示空链表的状态;
+
+\begin{enumerate}[nosep, label=\arabic*.]
+	\setcounter{enumi}{23}
+
+	\item \quad \textbf{end} of list;
+	\item \textbf{end} of TWLIST;
+\end{enumerate}
+
+设 $P$ 是以 TWLIST 为前缀的\textit{任意}程序块实例，并且在其前缀部分之外，不对任何 linkage 对象的变量 suc 或 pred 作显式引用赋值。那么，下面的断言 \ref{en:twlist-1} 和 \ref{en:twlist-2}，在 $P$ 的整个生存期内都成立（限于控制权处于 TWLIST 主体文本之外的时刻）。
+
+\begin{enumerate}[wide, nosep, label=(\arabic*)]
+	\item \label{en:twlist-1}
+	$P$ 中的任意 linkage 对象 $x$，或者不属于任何链表，此时 $x$.suc $== x$.pred $==$ \textbf{none}，且 $x \notin$ list；或者满足 $x\text{.suc.pred} == x\text{.pred.suc} == x$。
+	
+	由此可知，$P$ 中包含的所有链表都是循环链表。此外：
+	
+	\item \label{en:twlist-2}
+	$P$ 中的每条循环链表，都恰好包含一个链表头，它是 ``list'' 类的对象。
+\end{enumerate}
+
+要确立这些断言，只需注意下面的每项操作
+都保持它们成立，而 P 最初并不包含任何 linkage 对象。
+
+\noindent
+\textbf{new} \textit{link}（或 \textbf{new} $C$，其中 $C \subseteq$ linkage-list）生成一个 link 对象，它不属于任何链表（其 suc 和 pred 自动初始化为 \textbf{none}）。
+
+\noindent
+\textbf{new} \textit{list}（或 \textbf{new} $C$，其中 $C \subseteq$ list）生成一条“空”的循环链表，最初只包含生成的链表头，没有其他元素。
+
+\noindent
+以下假定 $x \in \text{link}$、$y$、$z \in \text{linkage}$，以及 $L \in \text{list}$。$x \leftrightarrow y$ 是 $x.\text{suc} == y$ \& $x == y$.pred 的简写。
+
+\noindent
+$x.out$：若 $z \leftrightarrow x \leftrightarrow y$，结果是 $z \leftrightarrow y$，而 $x$ 不再属于链表。（请注意，\ref{en:twlist-2} 与 $x \in \text{link}$ 共同推出 $x =/= y$、$z$。）若 $x$ 原本不属于任何链表，则什么也不做。
+
+\noindent
+$x.precede(y)$，其中 $x =/= y \land z \leftrightarrow y$。结果是 $x \leftrightarrow y$（若 $x =/= z$，还满足 $z \leftrightarrow x$）。如果 $x$ 原先属于某条链表，就先从该链表中移除 $x$。
+
+\noindent
+$x.into(L)$，其中 $z \leftrightarrow L$。结果是 $z \leftrightarrow x \leftrightarrow L$，这意味着 $x == L$. last。如果 $x$ 原先属于某条链表，就先从该链表中移除 $x$。
+
+不满足上述假定的任何 out、precede 或 into 调用，要么在程序文本上就不合法，要么会因为无效的远程标识符，立即导致运行时错误并终止程序。例如，当 $x == y$ 或 $y$ 不属于任何链表时，操作 $x$.precede$(y)$ 会把 $x$.pred 置为 \textbf{none}。因此，precede 主体中的远程标识符 pred. suc 无效。请注意，$x$.into$(L)$ 是一种“更安全”的操作，因为 $x \in \text{link}$、$L \in \text{list}$ 意味着 $x =/= L$，且 $L.\text{pred} =/= \text{\textbf{none}}$。
+
+只要不对任何变量 suc 或 pred 作显式赋值，断言 \ref{en:twlist-1} 与 \ref{en:twlist-2} 就保证了链表行为良好。因此，TWLIST 结构是一个可靠的“思维平台”：无论犯了什么程序设计错误，它在某种意义上都\textit{不会失效}。在 TWLIST 的基础上编程时，可以不去理会操作双向循环链表所涉及的链表处理细节。每个 list 对象都可以看作表示 link 对象的一个\textit{有序集合}，条件是任何 link 对象同一时刻至多属于一个这样的集合。这最后一点体现在 into 和 precede 过程的设计中。不过，显式使用属性 suc 和 pred，例如扫描链表时，使用者可能仍须记住：“最后”一个成员也有后继，“第一个”成员也有前驱，而二者都等于链表对象本身。另一种设计办法，是把下面的过程声明为 link 的属性，以隐藏这一细节。
+
+\quad \textbf{ref} $($link$)$ \textbf{procedure} successor;
+
+\quad \quad \textbf{inspect} suc \textbf{when} list \textbf{do} successor: $-$ \textbf{none}
+
+\quad \quad \textbf{otherwise} successor: $-$ suc;
+
+\quad \textbf{ref} $($link$)$ \textbf{procedure} predecessor;
+
+\quad \quad \textbf{inspect} pred \textbf{when} list \textbf{do} predecessor: $-$ \textbf{none}
+
+\quad \quad \textbf{otherwise} predecessor: $-$ pred;
+
+请注意，结构
+
+\quad \textbf{inspect} $r$ \textbf{when} $C$ \textbf{do}\dots
+
+\noindent
+使程序设计者能够检验 r 所引用的对象，是否属于它可能属于的某个子类 $C$。
+
+\section{概念层次结构}
+
+程序设计项目开始时，一端是一个\textit{问题}：它借助某些面向问题的概念，被或多或少地精确定义和理解；另一端是一种\textit{程序设计语言}：它可能是通用语言，提供一些面向机器的基本概念，我们希望这些概念已被精确定义并得到充分理解。两端之间存在一段\textit{概念距离}，必须用我们的程序将它衔接起来。可以把这段距离想象成竖直方向上的距离，而给定的程序设计语言就是地面。
+
+跨越这种距离的困难在于，我们一次只能按顺序处理一个简单的子问题，而且并不总能事先知道这些是否是\textit{应该解决的问题}。
+
+为了更好地克服这种困难，我们可以建造金字塔。与埃及的金字塔不同，我们的金字塔或者倒立着（自底向上构造），或者悬在空中（自顶向下构造）。这里采用的构造原则，最适合称为\textit{抽象}：我们专注于许多现象共有的特征，把与当前工作所处概念层次相距太远的特征\textit{舍去}。这样，就更有可能形成在后续阶段确实有用的概念。
+
+自底向上构造时，我们从基本语言层次出发，构造能涵盖某个问题领域多种现象的抽象概念。自顶向下构造时 [\hyperref[ref:8]{8}, \hyperref[ref:9]{9}]，我们借助某些概念来表述给定问题的解；这些概念可以用多种方式实现（和解释），甚至可能尚未得到充分理解。无论哪种方式，构造系统都可以通过不断在金字塔上方或下方添加新层次来进行，直到最终跨越概念之间的距离。每一层都对应于理解上的一个概念层次。
+
+例如，给定一个涉及排队现象的问题，可以把上一节的 TWLIST 作为自底向上构造的第一步。此后，在构造的其余部分，我们就可以自由地从动态操作对象有序集合的角度，
+进行思考和表述。
+
+各个概念层次，可以表示为类声明的一个\textit{前缀序列}。例如，可以构造一系列类声明，每个类都以前一个类作前缀：
+
+\hfill\textbf{class} $C_1$; \dots;\hspace{14em}
+
+\hfill $C_1$ \textbf{class} $C_2;$ \dots;\hspace{14em}
+
+\tabto*{13em}\dots
+
+\hfill $C_{n - 1}$ \textbf{class} $C_n$; \dots;\hspace{14em}
+
+\noindent
+序列 $C_1, C_2, \dots, C_{n-1}$ 称为 $C_n$ 的前缀序列。最外层前缀 $C_1$ 在地面层次上构造。其他每一层都建立在其下各层的基础上，因为它可以使用整个前缀序列的全部属性。借助这个语言机制，自底向上构造程序，就是按上述顺序，逐个规划并编写前缀序列中的类。最后，在整个序列之上，把程序本身写成一个带前缀的程序块：
+
+\quad $C_n$ \textbf{begin}\textemdash{}\textbf{end}
+
+\noindent
+自顶向下策略则对应于按相反顺序，构造前缀序列的各个成员，包括带前缀的程序块。（SIMULA 67 还包含其他机制，可以方便自顶向下及混合方式的构造，这里不作讨论。）
+
+一个构造良好的概念层次（自底向上），是一组定义明确、相互关联的概念，它们可以组合成更复杂的概念。这一层次可以为后续构造提供一个思维平台，使我们从地面向某个应用领域提升，也就是提供一种“应用语言”。预先构造的应用语言，能够缩短解决该领域许多问题时需要跨越的概念距离。这种平台是否有用，与它的稳固程度密切相关，也就是它能在多大程度上容忍、甚至防止误用。正如上一节所见，TWLIST 提供了一个格外稳固的思维平台；本节将在它的基础上，构造一种小巧而有用的应用语言，而这种语言又可以作为解决实际问题的平台。
+
+\subsection{离散事件模拟}
+
+模拟是一种方法，用于研究由相互作用的对象组成的大型系统的行为，并评估改变系统所产生的效果；在现实中以实验方式实施这些改变，代价可能过于高昂。模拟模型的研究对象可以是生产线、交通系统、计算机系统（硬件和软件）、由相互作用的个体组成的社会系统等等。大多数这样的系统，都具有以下共同现象。
+
+\begin{enumerate}[wide, nosep, label=(\arabic*)]
+	\item 各个过程\textit{并行}发生，在不规则的时间间隔后产生离散事件。
+	\item 当对象必须等待一个目前正忙的服务者提供服务时，会出现\textit{排队}现象。
+\end{enumerate}
+
+为了表示并行发生的过程，并不需要把相应的程序组件在计算机上安排为多道程序；但必须允许程序暂时挂起自己，以后再从暂停处恢复。因此，模拟中的活动对象或“过程”，将由（半）协程来表示，在调度机制的控制下，以\textit{伪并行}方式运行。
+
+例如，在作业车间模拟中，一份到来的订单会在车间引发一系列事件，以完成该订单。每份订单都可以视为一个过程，其活动是从一台机器移向下一台，请求并获得机器的服务。请求序列由订单的性质决定。如果所请求的机器空闲，就立即为订单提供服务，机器随之忙碌一段时间，长度等于服务时长。否则，订单就加入等待该机器空闲的订单队列。
+
+实现模拟时间这个概念，首先要求每个过程都能访问一个保存当前时间的变量 ``time''；时间控制机制在适当的时刻增加它的值。请注意，这个变量的更新必须完全独立于模拟期间计算时间的流逝，因为计算机上耗时很长的动作，在现实世界中可能只需很短时间，反之亦然。就模拟时间而言，各个过程的活动阶段都必须是瞬时的；只有当所有参与的过程都处于非活动状态时，``time'' 才会前进。
+
+因此，要模拟时间的流逝，一个模拟活动系统组件的过程，必须在给定的模拟时间间隔 $T$ 内交出控制权，并在 time 变量增加 $T$ 后重新激活。为此，过程将调用
+
+\quad hold$(T)$.
+
+例如，一份订单发现所需的机器已准备好为它服务时，需要用下面的语句，说明这项服务需要多长时间：
+
+\quad hold$($service interval$)$;
+
+\noindent
+此时，这份订单变为非活动状态，直到所有本应在 time $+$ service interval \textit{之前}重新激活的其他订单，都已重新激活并再次交出控制权。到这时，给定订单重新激活，就会发现它的 time 已增加到相应的值。
+
+过程处于暂停等待期间，必须把其重新激活的时间记录为自身的一个属性。因此，直接使用过程自身的 time 属性来记录，会很方便。
+
+按指定时间间隔暂停的方法，只适用于过程知道距离它下一次“事件”还要等多久的情形。但有时，它需要等待另一个过程中的某个事件发生。例如，一份订单发现所需机器正忙，就必须加入队列，等待机器空闲；而订单释放机器时，必须激活队列中的第一份其他订单（如果队列非空）。因此，还需要两个过程：
+
+\quad wait$(Q)$,
+
+\quad 以及 activate$(X)$，
+
+\noindent
+其中 $Q$ 引用一个队列（双向链表），调用过程在非活动期间将在这个队列上等待；$X$ 引用某个非活动过程，它将从所属队列中移除，并获准继续执行。
+
+最后，还必须提供启动和停止模拟的方法。可以通过下面的过程语句来实现：
+
+\quad simulate$($start, finish$)$,
+
+\noindent
+其中 start 引用启动模拟的过程，finish 给出模拟的时间上限。任何请求暂停到超出这一上限的时刻的过程，都可以忽略。start 过程想必会激活其他过程，使它们参与模拟。
+
+现在开始实现上述机制。我们将把它实现为 MINISIM 类，用作模拟主程序的前缀。为了利用双向链表机制，MINISIM 类必须以 TWLIST 为前缀。这保证了任何以 MINISIM 为前缀的模拟程序，也都可以使用 TWLIST。
+
+如果某类对象要能够参与模拟，就应把该类声明为 ``process'' 类的子类，这样便能使用所需的时间控制和排队机制。每个过程都必须能够把自己插入双向链表，因此，process 类本身必须声明为 link 类的子类。
+
+等待暂停时间间隔结束的过程，都保存在唯一的一条双向链表中，称为执行顺序集合（\textit{SQS}）。过程按重新激活时间从大到小排列。一个专门创建的 finish 过程，始终是 \textit{SQS} 的第一个链节点；最后一个链节点，则始终是当前活动的过程，它的 time 表示系统的当前时间。当它变为非活动状态时，\textit{SQS} 中的前驱（通常）会成为最后一个节点，而该前驱的局部 time 已经预先设为它应被重新激活的时刻。
+
+现在可以给出 MINISIM 的一般结构，暂时省略过程体。
+
+\quad TWLIST \textbf{class} MINISIM
+
+\quad \textbf{begin ref} $($list$)$ \textit{SQS};
+
+\quad \quad \textbf{ref} $($process$)$ \textbf{procedure} current;
+
+\quad \quad \quad current: $-$ \textit{SQS}.last;
+
+\quad \quad \quad link \textbf{class} process;
+
+\quad \quad \quad \quad \textbf{begin real} time;
+
+\quad \quad \quad \quad \quad \textbf{procedure} hold$(T)$; \textbf{real} $T$;
+
+\quad \quad \quad \quad \quad \quad \dots;
+
+\quad \quad \quad \quad \quad \textbf{procedure} wait$(Q)$; \textbf{ref} $($list$)\ Q$;
+
+\quad \quad \quad \quad \quad \quad \dots;
+
+\quad \quad \quad \quad \quad \textbf{procedure} activate$(X)$; \textbf{ref} $($process$)\ X$;
+
+\quad \quad \quad \quad \quad \quad \dots;
+
+\hangindent=4.25\parindent\quad \quad \quad \quad \quad detach; \textbf{comment} 新过程在被激活之前，实际上不执行任何操作
+
+\quad \quad \quad \quad \textbf{end} of process;
+
+\quad \quad \quad \textbf{procedure} simulate$($start, finish$)$;
+
+\quad \quad \quad \quad \textbf{ref} $($process$)$ start; \textbf{real} finish;
+
+\quad \quad \quad \quad \quad \dots;
+
+\quad \quad \textbf{end} of MINISIM.
+
+\noindent
+下面按相反顺序给出各个过程的主体。
+
+\quad simulate: \textbf{begin} \textit{SQS}: $-$ \textbf{new} list;
+
+\quad \quad \textbf{new} process.into $(SQS)$; current.time $\coloneq$ finish;
+
+\quad \quad \quad \textbf{if} start.time $<$ finish \textbf{then} start.into$(SQS)$;
+
+\quad \quad \quad \textbf{while} $\neg SQS$.empty \textbf{do}
+
+\quad \quad \quad \quad \textbf{begin} call$($current$)$;
+
+\quad \quad \quad \quad \quad current.out;
+
+\hangindent=4.25\parindent\quad \quad \quad \quad \quad \textbf{comment} 这保证终止或脱离的过程会离开 $SQS$;
+
+\quad \quad \quad \quad \textbf{end}
+
+\quad \quad \textbf{end} of simulate
+
+\quad wait: \textbf{begin} into$(Q)$; resume$($current$)$ \textbf{end};
+
+\noindent
+活动过程把自己插入队列，因而离开 $SQS$。它还恢复 $SQS$ 上下一个应被重新激活的过程。请注意，必须绕过 simulate 过程的标准执行顺序机制，因为原来的活动过程已经不在 $SQS$ 中。
+
+\quad activate: \textbf{begin} $X$.into$(SQS)$; \textbf{comment} 成为最后一个成员，即当前成员;
+
+\quad \quad $X$.time $\coloneq$ time; \textbf{comment} 即现在;
+
+\quad \quad resume$($current$)$;
+
+\quad \textbf{end} of activate.
+
+\noindent
+调用过程把 $X$ 放到 $SQS$ 中比自己更早执行的位置，但二者具有相同的 time。由于调用过程与被激活的过程 $X$ 时间相同，二者的排列次序对计时机制并无影响；我们选择的次序意味着，$X$ 的一个活动阶段会在实际执行中立即启动。待 $X$ 的活动阶段完成后，控制权回到调用过程，而模拟时间仍是同一时刻。
+
+\quad hold:
+
+\quad \textbf{begin ref} $($process$)\ P$;
+
+\quad \quad $P$: $-$ pred;
+
+\hangindent=3\parindent\quad \quad \textbf{comment} 执行 hold 的过程必然是活动过程，因此也必然是 $SQS$ 的最后一个成员。finish 过程从不执行 hold，所以 $SQS$ 上总会有倒数第二个过程
+
+\quad \quad \textbf{if} $T > 0$ \textbf{then} time $\coloneq \text{time} + T$;
+
+\quad \quad \textbf{comment} 设置局部的重新激活时间，time 绝不应减少;
+
+\quad \quad \textbf{if} time $\geqslant P$.time \textbf{then}
+
+\quad \quad \quad \textbf{begin comment} 必须改变本过程在 $SQS$ 中的位置;
+
+\quad \quad \quad \quad out; \textbf{comment} 离开 $SQS$，此时 $P$ 为当前过程;
+
+\quad \quad \quad \quad $P$: $-\ SQS$.first; \textbf{comment} finish 过程;
+
+\quad \quad \quad \quad \textbf{if} time $< P$.time \textbf{then}
+
+\quad \quad \quad \quad \quad \textbf{begin comment} 重新激活时间在时间上限以内;
+
+\quad \quad \quad \quad \quad \quad \textbf{while} time $< P$.time \textbf{do} $P$: $-\ P$.suc;
+
+\quad \quad \quad \quad \quad \quad \textbf{comment} 循环会终止，因为 time $\geqslant$ current.time;
+
+\quad \quad \quad \quad \quad \quad precede$(P)$
+
+\quad \quad \quad \quad \quad \textbf{end}; \textbf{comment} 忽略会超出时间上限的过程;
+
+\quad \quad \quad \quad resume$($current$)$
+
+\quad \quad \textbf{end};
+
+\quad \textbf{end} of hold;
+
+\noindent
+请注意，process 对象可以仅通过执行 detach 或到达自身的 \textbf{end} 来交出控制权。这两种情况下，控制权都返回 simulate 过程的标准执行顺序机制。不过，不应显式地对 process 对象使用基本激活指令 call 和 resume，因为这会违规绕过计时机制。
+
+\subsection{Lee 算法}
+
+作为一个简单却出人意料的模拟时间应用，我们来看 Lee 算法：在由单向道路网络相连的城市 $A$ 和城市 $B$ 之间，寻找最短路径。可以把这个算法想象成脉冲从终点城市 $B$ 出发，以相同速度沿所有通向它的道路传播。每次脉冲到达一个尚未被其他脉冲到达的城市，就记录它经过的道路，再沿所有通向这个城市的道路向外发出脉冲。如果脉冲到达一个已被其他脉冲到达的城市，它就消失。当某个脉冲到达城市 $A$ 时，任务便完成了。
+
+城市和道路可以用类来表示。
+
+\quad \textbf{class} city; \textbf{begin ref}$($road$)$ roadsin, wayout; \dots \textbf{end}
+
+\quad \textbf{class} road; \textbf{begin real} length; \textbf{ref} $($road$)$ nextin;
+
+\quad \quad \textbf{ref} $($city$)$ source, destination; \dots \textbf{end}
+
+\noindent
+变量 wayout 保存从该城市通向 $B$ 的推荐出口道路。对于尚未访问的城市，其值为 \textbf{none}。
+
+表示脉冲的类，接收它最先经过的那条道路作为参数。
+
+\quad \textbf{process class} pulse$(rd)$; \textbf{ref} $($road$)\ rd$;
+
+\quad \textbf{begin ref} $($city$)\ c$; $c$: $-\ rd$.source;
+
+\quad \quad hold$(rd$.length$)$;
+
+\quad \quad \textbf{if} $c$.wayout $=/=$ \textbf{none then}
+
+\quad \quad \textbf{begin} $c$.wayout: $-\ rd$;
+
+\quad \quad \quad \textbf{if} $c == A$ \textbf{then go to} done;
+
+\quad \quad \quad \textbf{comment} 通过跳转到非局部标号，停止模拟;
+
+\quad \quad \quad $rd$: $-\ c$.roadsin;
+
+\quad \quad \quad \textbf{while} $rd$ $=/=$ none \textbf{do}
+
+\quad \quad \quad \textbf{begin} activate$($\textbf{new} pulse $(rd));$
+
+\quad \quad \quad \quad $rd$: $-$ $rd$.nextin
+
+\quad \quad \quad \textbf{end} 传播脉冲
+
+\quad \quad \textbf{end}
+
+\quad \textbf{end} of pulse
+
+调用一个过程即可执行此算法。它的参数给出起点城市、终点城市，以及要打印的路径长度的上限 $L$。假定每个城市的 wayout 初值都为 \textbf{none}。在过程体前加上前缀 MINISIM，便可以使用时间和过程的概念。
+
+\quad \textbf{procedure} Lee$(A, B, L)$; \textbf{ref} $($city$)\ A, B$; \textbf{real} $L$;
+
+\quad \quad MINISIM \textbf{begin} process \textbf{class} pulse$(rd)$; \textbf{ref} $($road$)\ rd$;
+
+\quad \quad \quad \dots \textbf{同前}\dots;
+
+\quad \quad \quad process \textbf{class} starter;
+
+\quad \quad \quad \quad \textbf{begin ref} $($road$)\ rd$;
+
+\quad \quad \quad \quad \quad $rd$: $-\ B$.roadsin;
+
+\quad \quad \quad \quad \quad \textbf{while} $rd =/=$ \textbf{none do}
+
+\quad \quad \quad \quad \quad \quad \textbf{begin} activate $($\textbf{new} pulse$(rd))$;
+
+\quad \quad \quad \quad \quad \quad \quad \quad $rd \coloneq rd$.nextin
+
+\quad \quad \quad \quad \quad \quad \textbf{end}
+
+\quad \quad \quad \quad \textbf{end} of starter;
+
+\quad \quad \quad \quad simulate$($\textbf{new} starter, $L)$;
+
+\quad \quad done: \textbf{end} of Lee;
+
+\noindent
+执行例如下面的过程语句后，
+
+\quad Lee $($Oslo, Belfast, 1000$)$;
+
+\noindent
+其中 \textbf{ref} $($city$)$ Oslo, Belfast；只要所需路径存在，就可以把它打印出来。
+
+\quad \textbf{if} Oslo.wayout $=/=$ \textbf{none then}
+
+\quad \textbf{begin ref} $($city$)\ c$; \textbf{procedure} print\dots; \dots;
+
+\quad \quad print$($Oslo.wayout$)$; $c$: $-$ Oslo.wayout.destination;
+
+\quad \quad \textbf{while} $c =/=$ Belfast \textbf{do}
+
+\quad \quad \textbf{begin} print$(c)$; print$(c$.wayout$)$;
+
+\quad \quad \quad $c$: $-\ c$.wayout.destination
+
+\quad \quad \textbf{end}
+
+\quad \textbf{end else} outtext$($'no road connection within limit$)$;
+
+\noindent
+print 过程假定，城市和道路对象通过各自类的相同前缀，属于一个共同的类。对象的前缀部分，可以把所需的识别文字（例如 `London' 或 `M1'）作为数据保存。
+
+\subsection{作业车间模型}
+
+作为 MINISIM 的第二个应用，我们设计一个简单作业车间系统的模型。模型可以用来评估：在给定订单负荷下，车间具有多大的处理能力。下面提及的行号，都指第 \pageref{pg:program-job-shop} 页的程序。
+
+系统由\textit{机器组}（第 \hyperref[pg:program-job-shop-3]{3}\textendash \hyperref[pg:program-job-shop-10]{10} 行）和\textit{订单}对象（第 \hyperref[pg:program-job-shop-12]{12}\textendash \hyperref[pg:program-job-shop-22]{22} 行）组成；机器组的编号从 1 到 \textit{nmg}（第 \hyperref[pg:program-job-shop-1]{1}、\hyperref[pg:program-job-shop-11]{11} 行）。同组机器完全相同，因此无需逐台表示；不过，它们的数量须通过属性 \textit{nm} 的初值给定（第 \hyperref[pg:program-job-shop-3]{3} 行）。每组还有一个等待加工的订单队列，最初为空（第 \hyperref[pg:program-job-shop-4]{4}、\hyperref[pg:program-job-shop-9]{9} 行）；以及两个过程，分别用于\textit{请求}机器进行加工（第 \hyperref[pg:program-job-shop-5]{5}\textendash \hyperref[pg:program-job-shop-6]{6} 行），和在加工完成后\textit{释放}机器（第 \hyperref[pg:program-job-shop-7]{7}\textendash \hyperref[pg:program-job-shop-8]{8} 行）。
+
+变量 \textit{nm} 同时表示可用机器的数量（记为 $m$），以及队列中等待的订单数量（记为 $w$），其关系由以下断言描述。
+
+\quad \textbf{if} $nm > 0$ \textbf{then} $m = nm \land w = 0$
+
+\quad \textbf{else} $m = 0 \land w = \text{abs}(nm)$
+
+\noindent
+对于每个机器组，该断言在 request 和 release 的过程体之外都成立。
+
+请求机器时，如果 $m = 0$，调用者就必须进入队列，等待轮到自己（第 \hyperref[pg:program-job-shop-6]{6} 行）。释放机器时，如果 $w \neq 0$，应让一个等待中的过程继续。队列的第一个成员被激活，因而离开队列。因此，这里的排队规则是先来先服务。
+
+订单都是 process 对象，每个对象都生成下一份订单（第 \hyperref[pg:program-job-shop-18]{18} 行），并按照各自定义的加工计划，从一个机器组移向下一个（第 \hyperref[pg:program-job-shop-20]{20}\textendash \hyperref[pg:program-job-shop-21]{21} 行）。对于给定订单，计划包含 $n$ 步，每一步 $s(s = 1, 2, \dots, n)$ 都给出一个机器组编号 $(mg[s])$ 和相应的加工时间 $(pt[s])$。因此，该订单应在编号为 $mg[s]$ 的机器组加工 $pt[s]$ 的时间（第 \hyperref[pg:program-job-shop-21]{21} 行，hold）。请注意，如果机器组 $m$group$[mg[s]]$ 当前没有可用机器，第 \hyperref[pg:program-job-shop-21]{21} 行的 request 语句，就需要额外的一段模拟时间才能完成。
+
+模型由输入数据驱动。具体来说，每个订单对象在其第一个活动阶段读入自己的计划，包括计划长度（第 \hyperref[pg:program-job-shop-18]{18} 行）、到达时间（inreal，第 \hyperref[pg:program-job-shop-15]{15} 行），以及 $mg$ 和 $pt$ 的值（第 \hyperref[pg:program-job-shop-16]{16}\textendash\hyperref[pg:program-job-shop-17]{17} 行）。主程序建立指定规模的机器组（第 \hyperref[pg:program-job-shop-24]{24}、\hyperref[pg:program-job-shop-25]{25} 行），并在时间零生成第一份订单。（inint、inreal 和 lastitem 都是与标准输入文件关联的过程，该文件属于程序环境的一部分。）
+
+假定输入文件首先包含以下数据：
+
+\quad $nmg, \text{timelimit}, nm_1, nm_2, \dots, nm_{nmg}$
+
+\noindent
+它们定义作业车间的结构；之后，对于每份要生成的订单，都出现一组
+
+\quad $n, T, mg_1, pt_1, mg_2, pt_2, \dots, mg_n, pt_n,$
+
+\noindent
+数据。每个值 $T$ 定义该订单的到达时间。假定 $T$ 值按非递减次序排列。
+
+JOB SHOP 程序如下。
+
+\begin{enumerate}[nosep, label=\arabic*.]
+	\label{pg:program-job-shop}
+	
+	\item \label{pg:program-job-shop-1}
+	\textbf{begin integer} $nmg;\ nmg \coloneq$ inint;
+	 
+	\item MINISIM \textbf{begin}
+	
+	\item \label{pg:program-job-shop-3}
+	\textbf{class} machine group$(nm)$; \textbf{integer} $nm$;
+	
+	\item \label{pg:program-job-shop-4}
+	\textbf{begin ref} $($list$)\ Q$;
+	
+	\item \label{pg:program-job-shop-5}
+	\quad \textbf{procedure} request;
+	
+	\item \label{pg:program-job-shop-6}
+	\quad \textbf{begin} $nm \coloneq nm - 1$; \textbf{if} $nm < 0$ \textbf{then} current.wait$(Q)$ \textbf{end};
+	
+	\item \label{pg:program-job-shop-7}
+	\quad \textbf{procedure} release;
+	
+	\item \label{pg:program-job-shop-8}
+	\quad \textbf{begin} $nm \coloneq nm + 1$; \textbf{if} $nm \leqslant 0$ \textbf{then} current.activate$(Q$.first$)$ \textbf{end};
+	
+	\item \label{pg:program-job-shop-9}
+	\quad $Q$: $-$ \textbf{new} list
+	
+	\item \label{pg:program-job-shop-10}
+	\textbf{end} of machine group;
+	
+	\item \label{pg:program-job-shop-11}
+	\textbf{ref} $($machine group$)$ \textbf{array} $m$group$[1:nmg]$;
+	
+	\item \label{pg:program-job-shop-12}
+	process \textbf{class} order$(n)$; \textbf{integer} $n$;
+	
+	\item \label{pg:program-job-shop-13}
+	\textbf{begin integer array} $mg[1:n]$; \textbf{array} $pt[1:n]$; \textbf{integer} $s$;
+	
+	\item \label{pg:program-job-shop-14}
+	\quad \textbf{ref} $($machine group$)\ M$;
+	
+	\item \label{pg:program-job-shop-15}
+	\quad hold$($inreal $-$ time$)$; \textbf{comment} 现在就是到达时刻;
+	
+	\item \label{pg:program-job-shop-16}
+	\quad \textbf{for} $s\coloneq 1$ \textbf{step} 1 \textbf{until} $n$ \textbf{do}
+	
+	\item \label{pg:program-job-shop-17}
+	\quad \textbf{begin} $mg[s]\coloneq$ inint; $pt[s]\coloneq$ inreal \textbf{end};
+	
+	\item \label{pg:program-job-shop-18}
+	\quad \textbf{if} $\neg$lastitem \textbf{then} activate $($\textbf{new} order$($inint$))$;
+	
+	\item \label{pg:program-job-shop-19}
+	\quad \textbf{comment} 如果还有订单，生成下一份;
+	
+	\item \label{pg:program-job-shop-20}
+	\quad \textbf{for} $s\coloneq 1$ \textbf{step} 1 \textbf{until} $n$ \textbf{do}
+	
+	\item \label{pg:program-job-shop-21}
+	\quad \textbf{begin} $M$: $-\ m$group$[mg[s]]$; $M$.request; hold$(pt[s])$; $M$.release \textbf{end}
+	
+	\item \label{pg:program-job-shop-22}
+	\textbf{end} of order;
+	
+	\item \label{pg:program-job-shop-23}
+	\textbf{integer} $k$; \textbf{real} lim; lim $\coloneq$ inreal;
+	
+	\item \label{pg:program-job-shop-24}
+	\textbf{for} $k\coloneq 1$ \textbf{step} 1 \textbf{until} $nmg$ \textbf{do} $m$group$[k]$: $-$ \textbf{new} machine group$($inint$)$;
+	
+	\item \label{pg:program-job-shop-25}
+	simulate$($\textbf{new} order$($inint$)$, lim$)$;
+	
+	\item \label{pg:program-job-shop-26}
+	\textbf{comment} 初始时间默认是零;
+	
+	\item \label{pg:program-job-shop-27}
+	\textbf{end} of program;
+\end{enumerate}
+
+上面的模型还应增加观察其运行表现的机制。例如，很容易加入一个 ``reporter'' 过程，与模型组件“并行”运行，并按固定的模拟时间间隔，输出相关状态信息。
+
+\quad process \textbf{class} reporter$(dt)$; \textbf{real} $dt$;
+
+\quad \textbf{while true do}
+
+\quad \textbf{}\textbf{begin} hold$(dt)$;
+
+\quad \quad 输出信息，例如
+
+\quad \quad $m$group$[k].nm \lor (k = 1, 2, \dots,nmg)$
+
+\quad \textbf{end} of reporter;
+
+第一份订单可以生成一个 reporter 对象，并在系统时间零启动它。
+
+\quad activate$($\textbf{new} reporter$($inreal$))$
+
+\noindent
+随后，就会在系统时间 $t, 2t, 3t, \dots$ 输出信息，其中 $t$ 是实际参数的值。
+
+再来看一个例子：我们可能希望对每个机器组，累计统计订单在该组的等待时间直方图。为此，定义如下 machine group 子类，重新定义操作 ``request''。
+
+\quad machine group \textbf{class} Machine Group;
+
+\quad \textbf{begin ref} $($histogram$)\ H$;
+
+\quad \quad \textbf{procedure} request;
+
+\quad \quad \textbf{begin real} $T$;
+
+\quad \quad \quad $T\coloneq$ time; $nm\coloneq nm - 1$;
+
+\quad \quad \quad \textbf{if} $nm < 0$ \textbf{then} wait$(Q)$;
+
+\quad \quad \quad $H$.tabulate$($time $-\ T)$
+
+\quad \quad \textbf{end} of new request;
+
+\quad \quad $H$: $-$ \textbf{new} histogram$(X, N)$
+
+\quad \textbf{end} of Machine Group;
+
+假定 ``histogram'' 是第 \ref{sec:frequency-histogram} 小节中定义的类，而 \textbf{array} $X[1 : N]$ 和 \textbf{integer} $N$ 是非局部量。现在，把第 \hyperref[pg:program-job-shop-11]{11}、\hyperref[pg:program-job-shop-14]{14} 和 \hyperref[pg:program-job-shop-24]{24} 行的类标识符的首字母，由小写改成大写。这样，所有机器组都会成为按上述方式扩充后的对象；而引用变量 $M$ 的限定也加强了，因此第 \hyperref[pg:program-job-shop-21]{21} 行的 ``request'' 就引用新过程。于是，每个机器组都会累计得到一幅等待时间直方图。
+
+最后还应指出，``machine group'' 这个概念，作为伪并行过程的通用同步机制，可能相当有用。用更抽象的术语来表述它，并把它纳入“面向资源”模拟的“第三层”平台，也许会很有价值。事实上，一些著名的专用语言 [\ref{ref:10}, \ref{ref:11}]，已经把这个概念的扩充形式（``facility''、``store''）作为基本机制。还应注意，它与同步真正并行过程所用的信号量机制 [\ref{ref:12}] 很相似。过程 request 和 release 分别对应 $P$ 和 $V$ 操作。
+
+\bigskip
+
+\noindent
+\textbf{参考文献}
+\addcontentsline{toc}{section}{参考文献}
+\medskip\nopagebreak
+
+\begin{enumerate}[leftmargin=*, itemsep=.1em, wide=0pt, align=left, label=(\arabic*)]
+	\item \label{ref:1}
+	Naur, P. (ed.) (1962/63). Revised Report on the Algorithmic Language. ALGOL 60. \textit{Comp. J.}, \textbf{5}, pp. 349\textendash{}367.
+	
+	\item \label{ref:2}
+	Dahl, 0.-J., Myhrhaug, B., Nygaard, K. (1968). The Simular 67 Common Base Language. Norwegian Computing Centre, Forskningsveien 1B, Oslo 3.
+	
+	\item \label{ref:3}
+	Wang, A., Dahl, 0.-J. (1971). Coroutine Sequencing in a Block Structured Environment. \textit{BIT} \textbf{11}, 4, pp. 425\textendash{}449.
+	
+	\item \label{ref:4}
+	Dahl, 0.-J., Nygaard (1966). Simula\textemdash{}an Algol-Based Simulation Language. \textit{Comm. A.C.M.} \textbf{9}, 9, pp. 671\textendash{}678. 
+	
+	\item \label{ref:5}
+	Dahl, 0.-J. (1968). Discrete Event Simulation Languages. ``Programming Languages'' (ed. Genuys, F.). pp. 349\textendash{}395. Academic Press, London.
+	
+	\item \label{ref:6}
+	Hoare, C. A. R. (1968). Record Handling. ``Programming Languages'' (ed. Genuys, F.). pp. 291\textendash{}347. Academic Press, London.
+	
+	\item \label{ref:7}
+	Conway, M. E. (1963). Design of a Separable Transition\textemdash{}Diagram Compiler. \textit{Comm. A.C.M.} 6, 7, pp. 396\textendash{}408.
+	
+	\item \label{ref:8}
+	Naur, P. (1969). Programming by Actions Clusters. \textit{BIT} \textbf{9}, 3, pp. 250\textendash{}258.
+	
+	\item \label{ref:9}
+	Dijkstra, E. W. (1972). Notes on Structured Programming. ``Structured Programming''. pp. 1\textendash{}82. Academic Press, London.
+	
+	\item \label{ref:10}
+	Knuth, D. E., McNeley, J. L. (1964). SOL\textemdash{}A Symbolic Language for General-Purpose Systems Simulation. IEEE Trans. E.C.
+	
+	\item \label{ref:11}
+	IBM, General Purpose Systems Simulator.
+	
+	\item \label{ref:12}
+	Dijkstra, E. W. (1968). Co-operating Sequential Processes. ``Programming Languages''. pp. 43\textendash{}112. Academic Press, London.
+\end{enumerate}
