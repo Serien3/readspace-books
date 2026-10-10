@@ -25,4 +25,4 @@
 
 | Book | Archived Resources | Description | Status |
 | --- | --- | --- | --- |
-| [Artificial Intelligence: A Modern Approach（第 4 版）](AIMA/) | [PDF](AIMA/Artificial%20Intelligence%20A%20Modern%20Approach%20%284th%20Edition%29.pdf) |   | ⭐ |
+| [Artificial Intelligence: A Modern Approach (4th Edition) ](AIMA/) | [PDF](AIMA/Artificial%20Intelligence%20A%20Modern%20Approach%20%284th%20Edition%29.pdf) |   | ⭐ |
