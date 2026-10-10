@@ -5,9 +5,15 @@
 ###  🔥 Updates
 
 
+
 ## Directory
 
 ⭐ 表示已收集到电子阅读资源；🔥 表示处于维护状态，支持 vibe-reading
+
+- [Software Engineering](#software-engineering)
+  - ⭐🔥[Structured Programming](structured-programming/)
+- [Artificial intelligence](#artificial-intelligence)
+  - ⭐ [Artificial Intelligence: A Modern Approach（第 4 版）](AIMA/)
 
 ## Software Engineering
 
