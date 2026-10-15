@@ -1,0 +1,105 @@
+{
+  "series_url": "https://www.scattered-thoughts.net/writing/reflections-on-a-decade-of-coding/",
+  "pages": [
+    {
+      "order": 0,
+      "title": "Reflections on a decade of coding",
+      "url": "https://www.scattered-thoughts.net/writing/reflections-on-a-decade-of-coding/",
+      "published": "2021-09-22",
+      "downloaded_at": "2026-10-15T01:15:51+00:00",
+      "html": "html/00-reflections-on-a-decade-of-coding.html",
+      "markdown": "chapters/00-reflections-on-a-decade-of-coding.md",
+      "html_sha256": "fd58bcb6e242be1593560added47624efb89d56efdb7d8f9525cbb408d9f118f"
+    },
+    {
+      "order": 1,
+      "title": "On bad advice",
+      "url": "https://www.scattered-thoughts.net/writing/on-bad-advice/",
+      "published": "2021-09-22",
+      "downloaded_at": "2026-10-15T01:15:51+00:00",
+      "html": "html/01-on-bad-advice.html",
+      "markdown": "chapters/01-on-bad-advice.md",
+      "html_sha256": "67bcfa47ccbe648baf226dfec2c01e886499d0848bebfc2816f345989a02fc27"
+    },
+    {
+      "order": 2,
+      "title": "Things unlearned",
+      "url": "https://www.scattered-thoughts.net/writing/things-unlearned/",
+      "published": "2021-09-29",
+      "downloaded_at": "2026-10-15T01:15:51+00:00",
+      "html": "html/02-things-unlearned.html",
+      "markdown": "chapters/02-things-unlearned.md",
+      "html_sha256": "64e924e58815be8a39611d425ca5f8675ebb7021bc5ac4974ff333c07c81c4bf"
+    },
+    {
+      "order": 3,
+      "title": "Emotional management",
+      "url": "https://www.scattered-thoughts.net/writing/emotional-management/",
+      "published": "2021-11-01",
+      "downloaded_at": "2026-10-15T01:15:51+00:00",
+      "html": "html/03-emotional-management.html",
+      "markdown": "chapters/03-emotional-management.md",
+      "html_sha256": "43e4fa6445ed628cb163677e72ba237f505b9bef6b4c208671764fe9f08ecdc1"
+    },
+    {
+      "order": 4,
+      "title": "Setting goals",
+      "url": "https://www.scattered-thoughts.net/writing/setting-goals/",
+      "published": "2021-10-06",
+      "downloaded_at": "2026-10-15T01:15:52+00:00",
+      "html": "html/04-setting-goals.html",
+      "markdown": "chapters/04-setting-goals.md",
+      "html_sha256": "69d69a21eeaaefb31146fb48eab3742bcc372a4adeffadb383e7dc1710993bf3"
+    },
+    {
+      "order": 5,
+      "title": "Speed matters",
+      "url": "https://www.scattered-thoughts.net/writing/speed-matters/",
+      "published": "2021-10-14",
+      "downloaded_at": "2026-10-15T01:15:52+00:00",
+      "html": "html/05-speed-matters.html",
+      "markdown": "chapters/05-speed-matters.md",
+      "html_sha256": "99ae16c02fc9a135ea88afaf9ab010e2754e8b9ccaabaaea5019321149bf6f58"
+    },
+    {
+      "order": 6,
+      "title": "Moving faster",
+      "url": "https://www.scattered-thoughts.net/writing/moving-faster/",
+      "published": "2021-10-23",
+      "downloaded_at": "2026-10-15T01:15:52+00:00",
+      "html": "html/06-moving-faster.html",
+      "markdown": "chapters/06-moving-faster.md",
+      "html_sha256": "76393bdfabe79e100b59a3b98c49d647df2eba9205111f912701fe61b1d93ec1"
+    },
+    {
+      "order": 7,
+      "title": "Coding",
+      "url": "https://www.scattered-thoughts.net/writing/coding/",
+      "published": "2021-12-20",
+      "downloaded_at": "2026-10-15T01:15:52+00:00",
+      "html": "html/07-coding.html",
+      "markdown": "chapters/07-coding.md",
+      "html_sha256": "11a904c01f56ff0751347e7f478431bf5f6b854b87ffd41ab24d663eaa740ece"
+    },
+    {
+      "order": 8,
+      "title": "Testing",
+      "url": "https://www.scattered-thoughts.net/writing/testing/",
+      "published": "2021-11-26",
+      "downloaded_at": "2026-10-15T01:15:52+00:00",
+      "html": "html/08-testing.html",
+      "markdown": "chapters/08-testing.md",
+      "html_sha256": "351516fb6b705ac19653bcecd57882c734d970e964837bc976487c4917c317c4"
+    },
+    {
+      "order": 9,
+      "title": "Writing",
+      "url": "https://www.scattered-thoughts.net/writing/writing/",
+      "published": "2021-11-25",
+      "downloaded_at": "2026-10-15T01:15:52+00:00",
+      "html": "html/09-writing.html",
+      "markdown": "chapters/09-writing.md",
+      "html_sha256": "f03c1e7a362c0b4ab89ceddbb225d2e2d7f39d330caf06141045d587ffa145e1"
+    }
+  ]
+}

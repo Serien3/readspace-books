@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:type" content="article">
+  
+      <meta property="og:title" content="Reflections on a decade of coding" />
+      
+  
+  
+  
+      <meta property="og:url" content="https://www.scattered-thoughts.net/writing/reflections-on-a-decade-of-coding/" />
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@sc13ts">
+  <meta name="twitter:creator" content="@sc13ts">
+  
+      <title>Reflections on a decade of coding</title>
+  
+  
+  
+      <link rel="canonical" href="https://www.scattered-thoughts.net/writing/reflections-on-a-decade-of-coding/" />
+  
+  <link rel="alternate" type="application/atom+xml" title="Scattered Thoughts" href="/atom.xml" />
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon"/>
+  
+  <style>
+    progress,sub,sup{vertical-align:baseline}button,hr,input{overflow:visible}html{font-family:sans-serif;line-height:1.15;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}figcaption,menu,article,aside,details,figure,footer,header,main,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background-color:rgba(0,0,0,0);-webkit-text-decoration-skip:objects}a:active,a:hover{outline-width:0}abbr[title]{border-bottom:none;text-decoration:underline;text-decoration:underline dotted}b,strong{font-weight:bolder}dfn{font-style:italic}h1{font-size:2em;margin:.67em 0}mark{background-color:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}img{border-style:none}svg:not(:root){overflow:hidden}code,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}figure{margin:1em 40px}hr{box-sizing:content-box;height:0}button,input,optgroup,select,textarea{font:inherit;margin:0}optgroup{font-weight:700}button,select{text-transform:none}[type=submit],[type=reset],button,html [type=button]{-webkit-appearance:button}[type=button]::-moz-focus-inner,[type=reset]::-moz-focus-inner,[type=submit]::-moz-focus-inner,button::-moz-focus-inner{border-style:none;padding:0}[type=button]:-moz-focusring,[type=reset]:-moz-focusring,[type=submit]:-moz-focusring,button:-moz-focusring{outline:ButtonText dotted 1px}fieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}legend{box-sizing:border-box;color:inherit;display:table;max-width:100%;padding:0;white-space:normal}textarea{overflow:auto}[type=checkbox],[type=radio]{box-sizing:border-box;padding:0}[type=number]::-webkit-inner-spin-button,[type=number]::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}[type=search]::-webkit-search-cancel-button,[type=search]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-input-placeholder{color:inherit;opacity:.54}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}
+    body{padding:32px;color:#333;background-color:#fff;font-family:Fira Sans,Georgia,serif;font-size:20px}.container{max-width:45em;margin:0 auto}body blockquote{border-left:2px solid #333 !important}html{font-size:1em;font-size-adjust:.5}h1,h2,h3{font-weight:800;font-family:Fira Sans,Helvetica,sans-serif}h1{text-align:center;font-size:2em}h2{text-align:center;font-size:1.2em}article h2{margin-top:4em}h3{text-align:center;font-size:1em;margin:0em}.links a,.links a:visited,nav a,nav a:visited{text-decoration:none;color:#333}a,a:visited,a:active{color:#008099}a:hover{color:#008099 !important}.links{text-align:center}blockquote{margin:0;padding:0px 10px 0px 10px;border-radius:5px}article img{margin-left:auto;margin-right:auto;max-width:100%;display:block}article>pre{padding:0 1em 0 1em;background-color:#fff !important}code{color:#61676c}code,pre{white-space:pre;overflow:visible;font-family:Fira Code,monospace}ul,ol{padding:0}ul{padding-left:30px;list-style:disc}ol{padding-left:30px;list-style:decimal}header{margin:2em 0 2em 0;text-align:center}footer{margin-top:4em;text-align:center;font-style:italic}iframe{width:560px;height:315px;display:block;margin:0 auto;padding-top:1em}article hr{width:7em;margin-top:3em;margin-bottom:3em;border:0;height:1px;background-image:linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,.75), rgba(0,0,0,0))}.spacer-1{padding:.5em}.sc13ts-button{border:none !important;border-radius:2rem !important;padding:1rem !important;text-decoration:none !important;background:#008099 !important;color:#fff !important}.sc13ts-button:hover{background:#00d5ff !important;color:#fff !important}.footnote-definition p{display:inline}li:has(span:target){border:solid #32cd32;padding:.5em}
+  </style>
+</head>
+
+<body>
+
+  <div style="padding: 2rem;"></div>
+
+  <div class="container">
+    
+
+<nav style="position: absolute; left: 1em; top: 1em;">
+  <a href="/" title="Home">
+   <svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="2em" height="2em" viewBox="0 0 547.596 547.596" style="enable-background:new 0 0 547.596 547.596;"
+	 xml:space="preserve">
+<g>
+	<path d="M540.76,254.788L294.506,38.216c-11.475-10.098-30.064-10.098-41.386,0L6.943,254.788
+		c-11.475,10.098-8.415,18.284,6.885,18.284h75.964v221.773c0,12.087,9.945,22.108,22.108,22.108h92.947V371.067
+		c0-12.087,9.945-22.108,22.109-22.108h93.865c12.239,0,22.108,9.792,22.108,22.108v145.886h92.947
+		c12.24,0,22.108-9.945,22.108-22.108v-221.85h75.965C549.021,272.995,552.081,264.886,540.76,254.788z"/>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+</svg>
+  </a>
+</nav>
+
+<h1>Reflections on a decade of coding</h1>
+
+
+<div style="text-align: center; margin-top: -1.8em; font-style: italic; font-weight: light; font-size: 0.7em;">Published 2021-09-22</div>
+
+
+
+<article>
+  <p>I've been programming professionally for about 12 years. Here are some of the things I worked on in the last 2 years.</p>
+<ul>
+<li>In a small team (averaging ~3 people, I think?) in a little under a year, we built a SQL query planner that passed the &gt;6 million tests in the <a href="https://www.sqlite.org/sqllogictest/doc/trunk/about.wiki">sqlite logic test suite</a>.</li>
+<li>I figured out how to <a href="/writing/materialize-decorrelation">decorrelate arbitrary SQL subqueries</a> (I wasn't the first person to figure this out, but I got there independently).</li>
+<li>I demonstrated <a href="/writing/internal-consistency-in-streaming-systems/">a mode of consistency failure</a> in various popular streaming systems that I believe was not widely understood at the time.</li>
+<li>I wrote <a href="https://github.com/jamii/focus">the text editor</a> that I use for coding and writing every day. It took on the order of 100 hours of work.</li>
+</ul>
+<p>It's hard to write these examples without sounding like I'm bragging, but to be very clear - I don't think that these projects are particularly impressive in context. They are the kind of projects that someone with a decade of experience in a specialized area should be capable of.</p>
+<p>But they are also projects that I'm fairly confident I would have failed at even 5 years ago.</p>
+<p>My ability now isn't due to any intrinsic talent or grand insight but instead hundreds of tiny changes in habits, processes and values. When I compare these changes to online writing and discussions about how to get better at programming, I see very little overlap. The changes that lead to me being more effective are either not talked about at all or are in direct opposition to popular advice.</p>
+<p>I'm hesitant to write these kinds of posts, because they veer awfully close to flamebait and I really prefer to write things that are strongly factual rather than opinion-based. But there are a lot of things that I wish I could go back in time and tell my younger self, and the situation hasn't gotten much better since. There is a lot of high-quality writing aimed at people who are just learning to program, but very little that helped me figure out how to progress from being a novice.</p>
+<p>When I started reflecting on what has and hasn't worked for me I found a <em>lot</em> of things that I wanted to write down, so I've tried to roughly organize it:</p>
+<ul>
+<li><a href="/writing/on-bad-advice/">On bad advice</a></li>
+<li><a href="/writing/things-unlearned/">Things unlearned</a></li>
+<li><a href="/writing/emotional-management/">Emotional management</a></li>
+<li><a href="/writing/setting-goals/">Setting goals</a></li>
+<li><a href="/writing/speed-matters/">Speed matters</a></li>
+<li><a href="/writing/moving-faster/">Moving faster</a></li>
+<li><a href="/writing/coding/">Coding</a></li>
+<li><a href="/writing/testing/">Testing</a></li>
+<li><a href="/writing/writing/">Writing</a></li>
+</ul>
+<p>Notable gaps where I don't have useful experience to offer:</p>
+<ul>
+<li>Maintaining large codebases</li>
+<li>Operating long-lived systems</li>
+<li>Collaboration / working in teams</li>
+</ul>
+
+</article>
+
+<footer>
+  <hr>
+  <div class="spacer-1"></div>
+<div><form
+  action="https://buttondown.email/api/emails/embed-subscribe/scattered-thoughts"
+  method="post"
+  target="popupwindow"
+  onsubmit="window.open('https://buttondown.email/scattered-thoughts', 'popupwindow')"
+>Get updates via <a href="/atom.xml">atom</a> or <input style="display: inline" type="email" name="email" id="bd-email" placeholder="email" /> <input style="display: inline; font-style: normal" type="submit" value="✉" /></form></div>
+  <div class="spacer-1"></div>
+  <div>Send comments to <a href="mailto:jamie@scattered-thoughts.net">jamie@scattered-thoughts.net</a></div>
+</footer>
+
+
+  </div>
+
+   
+
+</body>
+</html>
